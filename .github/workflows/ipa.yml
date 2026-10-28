@@ -1,0 +1,55 @@
+name: Compila IPA
+
+# Compila l'app su un Mac di GitHub SENZA firma (la firma la fa SideStore sull'iPhone con l'Apple ID gratuito).
+# L'indirizzo dell'app non sta nel codice: variabili del repository FANTA_HOST e FANTA_PORT (Settings > Secrets and variables > Actions > Variables).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installa XcodeGen
+        run: brew install xcodegen
+      - name: Crea il progetto Xcode
+        run: xcodegen generate
+      - name: Compila (senza firma)
+        env:
+          FANTA_HOST: ${{ vars.FANTA_HOST }}
+          FANTA_PORT: ${{ vars.FANTA_PORT }}
+        run: |
+          set -o pipefail
+          xcodebuild -project Schieraxi.xcodeproj -scheme Schieraxi -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -archivePath build/Schieraxi.xcarchive \
+            archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            FANTA_HOST="$FANTA_HOST" FANTA_PORT="$FANTA_PORT" 2>&1 | tee build.log | tail -n 40
+      - name: Crea l'IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Schieraxi.xcarchive/Products/Applications/Schieraxi.app Payload/
+          zip -qry Schieraxi.ipa Payload
+          ls -la Schieraxi.ipa
+          /usr/libexec/PlistBuddy -c "Print :FantaHost" Payload/Schieraxi.app/Info.plist | sed 's/./*/g'   # solo per controllare che non sia vuoto
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Schieraxi-ipa
+          path: Schieraxi.ipa
+          retention-days: 30
+      - name: Pubblica come release (da scaricare dall'iPhone)
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "build-${{ github.run_number }}" Schieraxi.ipa --title "Build ${{ github.run_number }}" --notes "IPA non firmato: si installa con SideStore." --repo "$GITHUB_REPOSITORY"
+      - name: Log in caso di errore
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-compilazione
+          path: build.log
