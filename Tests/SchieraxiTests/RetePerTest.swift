@@ -136,10 +136,10 @@ final class ServerHTTPTests: XCTestCase {
     }
 
     func testIndirizziAmmessi() {
-        XCTAssertTrue(IndirizzoServer.valido("https://raspberrypi.ts.net:8443"))
+        XCTAssertTrue(IndirizzoServer.valido("https://server.example.invalid:8443"))
         XCTAssertTrue(IndirizzoServer.valido("  https://a.b  "))
-        XCTAssertFalse(IndirizzoServer.valido("http://raspberrypi:8000"), "solo https")
-        XCTAssertFalse(IndirizzoServer.valido("raspberrypi"))
+        XCTAssertFalse(IndirizzoServer.valido("http://server.example.invalid:8000"), "solo https")
+        XCTAssertFalse(IndirizzoServer.valido("server"))
         XCTAssertFalse(IndirizzoServer.valido("https://"))
         XCTAssertFalse(IndirizzoServer.valido(""))
     }
