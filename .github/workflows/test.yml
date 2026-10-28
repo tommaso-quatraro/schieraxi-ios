@@ -47,6 +47,14 @@ jobs:
             -resultBundlePath build/test.xcresult \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
             FANTA_HOST="$FANTA_HOST" FANTA_PORT="$FANTA_PORT" 2>&1 | tee build/test.log | tail -n 60
+      - name: Riepilogo dei test (numeri)
+        if: always()
+        run: |
+          echo "Test eseguiti con esito positivo (righe «passed» del log):"
+          grep -cE "^Test Case .* passed" build/test.log || true
+          echo "Test falliti:"
+          grep -cE "^Test Case .* failed" build/test.log || true
+          xcrun xcresulttool get test-results summary --path build/test.xcresult --compact 2>/dev/null || true
       - name: Riepilogo (righe con errori)
         if: failure()
         run: |
