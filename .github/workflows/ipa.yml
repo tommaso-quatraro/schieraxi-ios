@@ -47,6 +47,10 @@ jobs:
           test -f Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget
           /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/Info.plist
           /usr/libexec/PlistBuddy -c "Print :FantaHost" Payload/Schieraxi.app/Info.plist | sed 's/./*/g'   # solo per controllare che non sia vuoto
+          # le icone alternative (Lega > Icona dell'app) devono essere dichiarate nell'Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons" Payload/Schieraxi.app/Info.plist | head -n 20
+          # i target di test non devono finire nell'IPA
+          ! ls Payload/Schieraxi.app/PlugIns | grep -i test
       - uses: actions/upload-artifact@v4
         with:
           name: Schieraxi-ipa
