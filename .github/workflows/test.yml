@@ -40,6 +40,7 @@ jobs:
           FANTA_PORT: ${{ vars.FANTA_PORT }}
         run: |
           set -o pipefail
+          mkdir -p build
           rm -rf build/test.xcresult
           xcodebuild test -project Schieraxi.xcodeproj -scheme Schieraxi \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
