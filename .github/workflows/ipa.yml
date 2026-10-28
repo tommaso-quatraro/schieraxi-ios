@@ -35,6 +35,7 @@ jobs:
           xcodebuild -project Schieraxi.xcodeproj -scheme Schieraxi -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -archivePath build/Schieraxi.xcarchive \
             archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION="1.0.${{ github.run_number }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             FANTA_HOST="$FANTA_HOST" FANTA_PORT="$FANTA_PORT" 2>&1 | tee build.log | tail -n 40
       - name: Crea l'IPA
         run: |
@@ -61,7 +62,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "build-${{ github.run_number }}" Schieraxi.ipa --title "Build ${{ github.run_number }}" --notes "IPA non firmato, da installare con SideStore." --repo "$GITHUB_REPOSITORY"
+          # il sorgente di SideStore: l'indirizzo fisso è .../releases/latest/download/sorgente.json
+          python3 scripts/genera_sorgente.py "$GITHUB_REPOSITORY" "${{ github.run_number }}" Schieraxi.ipa
+          gh release create "build-${{ github.run_number }}" Schieraxi.ipa sorgente.json --title "Build ${{ github.run_number }}" --notes "IPA non firmato, da installare con SideStore. Aggiornamenti automatici: aggiungi in SideStore il sorgente https://github.com/$GITHUB_REPOSITORY/releases/latest/download/sorgente.json" --repo "$GITHUB_REPOSITORY"
       - name: Log in caso di errore
         if: failure()
         uses: actions/upload-artifact@v4
