@@ -252,7 +252,10 @@ final class ImmaginiTests: XCTestCase {
     }
 
     func testImmagineRidottaPerIlServer() throws {
-        let grande = UIGraphicsImageRenderer(size: CGSize(width: 2000, height: 1000)).image { c in
+        let opaco = UIGraphicsImageRendererFormat.default()
+        opaco.opaque = true   // come una foto della libreria: nessun canale della trasparenza
+        opaco.scale = 1
+        let grande = UIGraphicsImageRenderer(size: CGSize(width: 2000, height: 1000), format: opaco).image { c in
             UIColor.blue.setFill()
             c.fill(CGRect(x: 0, y: 0, width: 2000, height: 1000))
         }

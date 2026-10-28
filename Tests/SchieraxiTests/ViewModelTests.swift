@@ -249,7 +249,7 @@ final class ScambiViewModelTests: XCTestCase {
         await vm.caricaSquadre()
         await vm.caricaProposte()
         XCTAssertEqual(vm.proposte.dato?.proposte.count, 5)
-        XCTAssertEqual(vm.altre.count, 10, "nessuna squadra è «mia» nella fixture")
+        XCTAssertEqual(vm.altre.count, 9, "10 squadre, una è la mia")
         XCTAssertEqual(vm.propense.first?.nome, "Joga Finto")
     }
 

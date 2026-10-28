@@ -276,7 +276,7 @@ final class LegaViewModelTests: XCTestCase {
         let s = ServerDiProva.conFixture(["/api/squadre": "squadre"])
         let squadre = SquadreViewModel(server: s)
         await squadre.carica()
-        XCTAssertEqual(squadre.mia, "", "nella fixture nessuna è «mia»")
+        XCTAssertEqual(squadre.mia, "Squadra Demo", "la squadra segnata come «mia» nella fixture")
         await squadre.impostaMia("Real Esempio")
         let corpo = String(decoding: try XCTUnwrap(s.corpiInviati(a: "PUT /api/mia-squadra").last), as: UTF8.self)
         XCTAssertEqual(corpo, "{\"nome\":\"Real Esempio\"}")
