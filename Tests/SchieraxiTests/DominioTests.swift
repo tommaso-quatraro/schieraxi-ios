@@ -112,6 +112,7 @@ final class DominioTests: XCTestCase {
         XCTAssertEqual(c.schierato?.nome, "Giocatore 083")
     }
 
+    @MainActor
     func testPercorsoDelConfronto() {
         XCTAssertEqual(ConfrontoViewModel.percorso(a: 1, b: 2, contesto: nil), "/api/confronto?a=1&b=2")
         let c = ContestoConfronto(livello: -1, modulo: "4-3-3", squadra: "Gli Amici")

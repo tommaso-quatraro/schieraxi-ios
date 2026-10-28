@@ -72,7 +72,7 @@ final class ServerDiProva: ServerClient, @unchecked Sendable {
 
 /// Aspetta (al massimo `secondi`) che una condizione diventi vera: per le azioni che partono in un `Task` (come la modifica a mano).
 @MainActor
-func attendi(_ secondi: Double = 5, _ descrizione: String = "condizione", finche condizione: @MainActor () -> Bool,
+func attendi(_ descrizione: String = "condizione", secondi: Double = 5, finche condizione: @MainActor () -> Bool,
              file: StaticString = #filePath, line: UInt = #line) async {
     let limite = Date().addingTimeInterval(secondi)
     while !condizione() && Date() < limite {
