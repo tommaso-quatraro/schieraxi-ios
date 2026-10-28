@@ -36,8 +36,8 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b > /dev/null
       - name: Compila ed esegui i test
         env:
-          FANTA_HOST: ${{ vars.FANTA_HOST }}
-          FANTA_PORT: ${{ vars.FANTA_PORT }}
+          FANTA_HOST: ${{ secrets.FANTA_HOST }}
+          FANTA_PORT: ${{ secrets.FANTA_PORT }}
         run: |
           set -o pipefail
           mkdir -p build
