@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
     inputs:
       runner:
-        description: "Immagine del Mac (prova: macos-26 per Xcode 26 e Liquid Glass; la release si crea solo con quella predefinita)"
+        description: "Immagine del Mac (prova: macos-26 per Xcode 26 e Liquid Glass; la release si crea solo con quella predefinita, macos-26; macos-15 resta come ripiego)"
         type: choice
-        options: [macos-15, macos-26]
-        default: macos-15
+        options: [macos-26, macos-15]
+        default: macos-26
   push:
     branches: [main]
 
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   ipa:
-    runs-on: ${{ inputs.runner || 'macos-15' }}
+    runs-on: ${{ inputs.runner || 'macos-26' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +53,7 @@ jobs:
           path: Schieraxi.ipa
           retention-days: 30
       - name: Pubblica come release (da scaricare dall'iPhone)
-        if: github.ref == 'refs/heads/main' && (inputs.runner || 'macos-15') == 'macos-15'
+        if: github.ref == 'refs/heads/main' && (inputs.runner || 'macos-26') == 'macos-26'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
