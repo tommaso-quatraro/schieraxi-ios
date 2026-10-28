@@ -1,0 +1,71 @@
+name: Test
+
+# Esegue i test automatici nel simulatore di un Mac di GitHub: unitari (SchieraxiTests: Domain, Data, ViewModel) e di interfaccia
+# (SchieraxiUITests: l'app in modalità -DEMO, senza rete). Parte a ogni push e a ogni pull request.
+# Se un test fallisce il lavoro diventa rosso e i risultati (.xcresult e log) restano come artifact per 7 giorni.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installa XcodeGen
+        run: brew install xcodegen
+      - name: Crea il progetto Xcode
+        run: xcodegen generate
+      - name: Scegli il simulatore
+        id: sim
+        run: |
+          xcodebuild -version
+          IFS=$'\t' read -r UDID NOME IOS <<< "$(python3 -I scripts/scegli_simulatore.py iphone)"
+          echo "Simulatore: $NOME ($IOS) $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "nome=$NOME" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b > /dev/null
+      - name: Compila ed esegui i test
+        env:
+          FANTA_HOST: ${{ secrets.FANTA_HOST }}
+          FANTA_PORT: ${{ secrets.FANTA_PORT }}
+        run: |
+          set -o pipefail
+          mkdir -p build
+          rm -rf build/test.xcresult
+          xcodebuild test -project Schieraxi.xcodeproj -scheme Schieraxi \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath build/test.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
+            FANTA_HOST="$FANTA_HOST" FANTA_PORT="$FANTA_PORT" 2>&1 | tee build/test.log | tail -n 60
+      - name: Riepilogo dei test (numeri)
+        if: always()
+        run: |
+          echo "Test eseguiti con esito positivo (righe «passed» del log):"
+          grep -cE "^Test Case .* passed" build/test.log || true
+          echo "Test falliti:"
+          grep -cE "^Test Case .* failed" build/test.log || true
+          xcrun xcresulttool get test-results summary --path build/test.xcresult --compact 2>/dev/null || true
+      - name: Riepilogo (righe con errori)
+        if: failure()
+        run: |
+          grep -E "error:|Test Case .* failed|\*\* TEST FAILED|failed:" build/test.log | head -n 80 || true
+      - name: Carica i risultati se qualcosa è andato storto
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: risultati-test
+          path: |
+            build/test.xcresult
+            build/test.log
+          retention-days: 7
+          if-no-files-found: ignore

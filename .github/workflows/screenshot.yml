@@ -16,7 +16,7 @@ permissions:
 jobs:
   screenshot:
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - name: Installa XcodeGen
@@ -25,8 +25,8 @@ jobs:
         run: xcodegen generate
       - name: Compila per il simulatore (senza firma)
         env:
-          FANTA_HOST: ${{ vars.FANTA_HOST }}
-          FANTA_PORT: ${{ vars.FANTA_PORT }}
+          FANTA_HOST: ${{ secrets.FANTA_HOST }}
+          FANTA_PORT: ${{ secrets.FANTA_PORT }}
         run: |
           set -o pipefail
           xcodebuild -project Schieraxi.xcodeproj -scheme Schieraxi -configuration Debug \
