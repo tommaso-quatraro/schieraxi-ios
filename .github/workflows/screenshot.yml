@@ -1,0 +1,66 @@
+name: Screenshot dell'app
+
+# Compila l'app per il SIMULATORE di un Mac di GitHub, la avvia in modalità demo (argomento -DEMO: dati finti, nessuna rete)
+# e fotografa ogni schermata su iPhone e iPad, in tema chiaro e scuro, con testo normale e grande.
+# Serve a VEDERE l'app senza avere un iPhone o un Mac. Le foto stanno nell'artifact "screenshot-app" (14 giorni). Non crea release.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "Sources/**"
+
+permissions:
+  contents: read
+
+jobs:
+  screenshot:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installa XcodeGen
+        run: brew install xcodegen
+      - name: Crea il progetto Xcode
+        run: xcodegen generate
+      - name: Compila per il simulatore (senza firma)
+        env:
+          FANTA_HOST: ${{ vars.FANTA_HOST }}
+          FANTA_PORT: ${{ vars.FANTA_PORT }}
+        run: |
+          set -o pipefail
+          xcodebuild -project Schieraxi.xcodeproj -scheme Schieraxi -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
+            build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 \
+            FANTA_HOST="$FANTA_HOST" FANTA_PORT="$FANTA_PORT" 2>&1 | tee build.log | tail -n 40
+          test -d build/Build/Products/Debug-iphonesimulator/Schieraxi.app
+      - name: Simulatori disponibili
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available | head -n 60
+      - name: Scatta le fotografie
+        run: bash scripts/screenshot.sh build/Build/Products/Debug-iphonesimulator/Schieraxi.app screenshot
+      - name: Carica le fotografie
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-app
+          path: screenshot/*.png
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Rapporti di crash (se ce ne sono)
+        if: always()
+        run: |
+          mkdir -p crash
+          cp ~/Library/Logs/DiagnosticReports/Schieraxi* crash/ 2>/dev/null || true
+          ls crash
+      - name: Carica i log in caso di problemi
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-screenshot
+          path: |
+            build.log
+            crash/*
+          retention-days: 7
+          if-no-files-found: ignore
