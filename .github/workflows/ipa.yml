@@ -36,6 +36,10 @@ jobs:
           cp -R build/Schieraxi.xcarchive/Products/Applications/Schieraxi.app Payload/
           zip -qry Schieraxi.ipa Payload
           ls -la Schieraxi.ipa
+          # l'estensione del widget deve stare dentro l'app (PlugIns), con il suo eseguibile
+          ls -la Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex
+          test -f Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/Info.plist
           /usr/libexec/PlistBuddy -c "Print :FantaHost" Payload/Schieraxi.app/Info.plist | sed 's/./*/g'   # solo per controllare che non sia vuoto
       - uses: actions/upload-artifact@v4
         with:
@@ -43,7 +47,7 @@ jobs:
           path: Schieraxi.ipa
           retention-days: 30
       - name: Pubblica come release (da scaricare dall'iPhone)
-        if: github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
