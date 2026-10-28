@@ -70,6 +70,17 @@ final class ServerDiProva: ServerClient, @unchecked Sendable {
     }
 }
 
+/// Una scatola con un valore dentro, che si può riempire dalle closure dei server finti (che girano su altri thread).
+final class Scatola<T>: @unchecked Sendable {
+    private let blocco = NSLock()
+    private var contenuto: T?
+
+    var valore: T? {
+        get { blocco.lock(); defer { blocco.unlock() }; return contenuto }
+        set { blocco.lock(); defer { blocco.unlock() }; contenuto = newValue }
+    }
+}
+
 /// Aspetta (al massimo `secondi`) che una condizione diventi vera: per le azioni che partono in un `Task` (come la modifica a mano).
 @MainActor
 func attendi(_ descrizione: String = "condizione", secondi: Double = 5, finche condizione: @MainActor () -> Bool,

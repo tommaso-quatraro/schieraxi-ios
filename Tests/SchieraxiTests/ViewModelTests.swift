@@ -233,7 +233,7 @@ final class FormazioneViewModelTests: XCTestCase {
 @MainActor
 final class ScambiViewModelTests: XCTestCase {
     func testIndirizzoDelleProposte() {
-        let vm = ScambiViewModel(server: .conFixture([:]))
+        let vm = ScambiViewModel(server: ServerDiProva.conFixture([:]))
         XCTAssertEqual(vm.indirizzoProposte, "/api/scambi/proposte?due=false")
         vm.due = true
         XCTAssertEqual(vm.indirizzoProposte, "/api/scambi/proposte?due=true")
@@ -245,7 +245,7 @@ final class ScambiViewModelTests: XCTestCase {
     }
 
     func testProposteELeSquadrePiuPropense() async throws {
-        let vm = ScambiViewModel(server: .conFixture(["/api/scambi/proposte": "proposte", "/api/squadre": "squadre"]))
+        let vm = ScambiViewModel(server: ServerDiProva.conFixture(["/api/scambi/proposte": "proposte", "/api/squadre": "squadre"]))
         await vm.caricaSquadre()
         await vm.caricaProposte()
         XCTAssertEqual(vm.proposte.dato?.proposte.count, 5)
@@ -270,7 +270,7 @@ final class ScambiViewModelTests: XCTestCase {
     }
 
     func testOffertaConServerSpento() async {
-        let vm = ScambiViewModel(server: .chePrecipita(.server("Indica prima la tua squadra nella sezione Lega")))
+        let vm = ScambiViewModel(server: ServerDiProva.chePrecipita(.server("Indica prima la tua squadra nella sezione Lega")))
         vm.testoOfferta = "Ti do X e tu mi dai Y"
         await vm.valutaOfferta()
         XCTAssertNil(vm.esitoOfferta)
@@ -278,7 +278,7 @@ final class ScambiViewModelTests: XCTestCase {
     }
 
     func testBozzaCopiataNegliAppunti() throws {
-        let vm = ScambiViewModel(server: .conFixture([:]))
+        let vm = ScambiViewModel(server: ServerDiProva.conFixture([:]))
         let p: ProposteScambi = try Fixture.decodifica("proposte")
         vm.copiaBozza(p.proposte[0])
         XCTAssertEqual(UIPasteboard.general.string, ScambiLogica.bozza(p.proposte[0]))
@@ -306,7 +306,7 @@ final class ScambiViewModelTests: XCTestCase {
 @MainActor
 final class MercatoEAstaViewModelTests: XCTestCase {
     func testIndirizzoDellaClassifica() {
-        let vm = MercatoViewModel(server: .conFixture([:]))
+        let vm = MercatoViewModel(server: ServerDiProva.conFixture([:]))
         XCTAssertEqual(vm.percorsoClassifica, "/api/classifica?limite=60&liberi=true")
         vm.ruolo = "D"
         vm.soloLiberi = false
@@ -353,7 +353,7 @@ final class MercatoEAstaViewModelTests: XCTestCase {
     }
 
     func testRicercaConErrore() async {
-        let vm = RicercaViewModel(server: .chePrecipita())
+        let vm = RicercaViewModel(server: ServerDiProva.chePrecipita())
         vm.testo = "mar"
         await vm.cerca()
         XCTAssertNotNil(vm.errore)
