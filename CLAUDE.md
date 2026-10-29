@@ -18,7 +18,7 @@ Il server e la logica (modello, formazioni, scambi) stanno nell'altro repository
 - I ViewModel ricevono un `ServerClient` nel costruttore (anteprime: `FinteServer`, test: `ServerDiProva`). Niente indirizzi veri nei test: solo `example.invalid`.
 - Il progetto Xcode **non è in git**: lo genera XcodeGen da `project.yml`. Modifica `project.yml`, mai un `.xcodeproj`.
 - Numeri e date sempre in italiano (`Formato`, `Quando`). Testi in italiano. Accessibilità: VoiceOver con frasi complete, aree di tocco da 44 pt, Dynamic Type.
-- Le fixture dei test sono risposte vere del server (nomi di una lega reale): il repository è privato e deve restarlo.
+- **Il repository è PUBBLICO** (serve a SideStore per scaricare gli aggiornamenti). Le fixture dei test sono risposte vere del server e contengono nomi di una lega reale: non aggiungere altri dati personali e non copiare nuove risposte vere senza prima sostituire i nomi (decisione aperta: tommaso-quatraro/casa#7).
 
 ## Chiavi e segreti
 **Mai in git**: firme, certificati, profili, password, Apple ID. L'indirizzo del server arriva dalle variabili del repository `FANTA_HOST` e `FANTA_PORT`, non sta nel codice.
