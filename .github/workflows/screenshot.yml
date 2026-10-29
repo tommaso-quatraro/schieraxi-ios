@@ -5,6 +5,12 @@ name: Screenshot dell'app
 # Serve a VEDERE l'app senza avere un iPhone o un Mac. Le foto stanno nell'artifact "screenshot-app" (14 giorni). Non crea release.
 on:
   workflow_dispatch:
+    inputs:
+      scatti:
+        description: "veloce = solo le schermate principali (pochi minuti); completo = tutte le varianti (quasi un'ora)"
+        type: choice
+        options: [veloce, completo]
+        default: veloce
   push:
     branches: [main]
     paths:
@@ -39,6 +45,8 @@ jobs:
           xcodebuild -version
           xcrun simctl list devices available | head -n 60
       - name: Scatta le fotografie
+        env:
+          SCATTI: ${{ inputs.scatti || 'veloce' }}
         run: bash scripts/screenshot.sh build/Build/Products/Debug-iphonesimulator/Schieraxi.app screenshot
       - name: Carica le fotografie
         if: always()
