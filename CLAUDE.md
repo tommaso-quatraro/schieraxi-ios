@@ -1,4 +1,4 @@
-# SchieraXI per iPhone: regole del progetto
+# SchieraXI per iPhone (repository `schieraxi-ios`): regole del progetto
 
 App **nativa** (SwiftUI) per iPhone e iPad. Parla con il server di SchieraXI sul Raspberry (API JSON, Tailscale acceso).
 Il server e la logica (modello, formazioni, scambi) stanno nell'altro repository: `C:\Users\utente\Progetti\schieraxi`. Qui c'è solo l'app.
