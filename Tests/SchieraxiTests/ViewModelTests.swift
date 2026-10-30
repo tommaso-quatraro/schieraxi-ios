@@ -298,7 +298,7 @@ final class ScambiViewModelTests: XCTestCase {
         await vm.analizza()
         XCTAssertEqual(vm.esito?.altra, "Lokomotiv Demo")
         XCTAssertNil(vm.errore)
-        XCTAssertEqual(s.quante("GET /api/scambi/analizza?con=Lokomotiv%20Spritz&do=7414&ricevo=7485"), 1)
+        XCTAssertEqual(s.quante("GET /api/scambi/analizza?con=Lokomotiv%20Spritz&do=7414&ricevo=7485&completo=true"), 1)
         XCTAssertEqual(ArchivioScambi.leggi().first?.dai, ["Giocatore 036"], "lo scambio analizzato finisce nell'archivio")
     }
 }
