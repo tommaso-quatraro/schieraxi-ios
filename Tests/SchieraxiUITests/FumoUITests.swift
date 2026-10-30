@@ -70,12 +70,11 @@ final class FumoUITests: XCTestCase {
     func testMercatoSezioni() {
         vaiA("Mercato")
         attendi("Svincolati che migliorano la squadra")
-        for sezione in ["Osservati", "Asta", "Classifica", "Calendario", "Cerca"] {
+        for sezione in ["Consigliati", "Giocatori", "Osservati", "Calendario"] {
             XCTAssertTrue(app.buttons[sezione].waitForExistence(timeout: 10), "manca la sezione \(sezione) del Mercato")
         }
-        app.buttons["Asta"].tap()
-        attendi("Piano per l'asta")
-        app.buttons["Classifica"].tap()
+        XCTAssertFalse(app.buttons["Asta"].exists, "l'asta sta in Lega")
+        app.buttons["Giocatori"].tap()
         attendi("Solo svincolati")
     }
 
