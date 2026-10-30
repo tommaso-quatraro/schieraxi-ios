@@ -100,7 +100,7 @@ final class ValidazioneAvversariaTests: XCTestCase {
     }
 
     func testMessaggiDErroreDicononCosaFare() {
-        XCTAssertTrue(SchermataAccesso.testoErrore(ErroreApi.rete("x")).contains("Tailscale"))
+        XCTAssertTrue(SchermataAccesso.testoErrore(ErroreApi.rete("x")).contains("connessione"))
         XCTAssertTrue(SchermataAccesso.testoErrore(ErroreApi.timeout).contains("troppo"))
         XCTAssertTrue(SchermataAccesso.testoErrore(ErroreApi.risposta(502)).contains("502"))
         XCTAssertTrue(SchermataAccesso.testoErrore(ErroreApi.indirizzoNonValido).contains("https://"))

@@ -588,3 +588,36 @@ final class RicercheDiScambiTests: XCTestCase {
         XCTAssertEqual(s.quante("/api/scambi/proposte"), 2)
     }
 }
+
+/// Nome visualizzato dell'utente e plurali.
+final class NomeEPluraliTests: XCTestCase {
+    func testSiMostraIlNomeVisualizzato() throws {
+        let r: RispostaAccount = try Decodifica.decodifica(Data(#"{"multiutente": true, "utente": {"id": 3, "nome_utente": "tuttobene", "nome_visualizzato": "TuttoBene", "ruolo": "utente"}}"#.utf8))
+        let u = try XCTUnwrap(r.utente)
+        XCTAssertEqual(u.nome, "TuttoBene")
+        XCTAssertEqual(u.nomeUtente, "tuttobene")
+    }
+
+    func testSenzaNomeVisualizzatoSiUsaIlNomeUtente() throws {
+        let r: RispostaAccount = try Decodifica.decodifica(Data(#"{"multiutente": true, "utente": {"id": 3, "nome_utente": "mario", "ruolo": "utente"}}"#.utf8))
+        XCTAssertEqual(r.utente?.nome, "mario")
+        XCTAssertEqual(Utente(id: 1, nomeUtente: "a", ruolo: "utente", creato: nil, nomeVisualizzato: "   ").nome, "a", "un nome vuoto non conta")
+    }
+
+    func testUnUtenteSalvatoPrimaDelNuovoCampoSiLegge() throws {
+        let vecchio = #"{"id": 1, "nomeUtente": "mario", "ruolo": "utente"}"#
+        let u = try JSONDecoder().decode(Utente.self, from: Data(vecchio.utf8))
+        XCTAssertEqual(u.nome, "mario")
+    }
+
+    func testIPlurali() {
+        XCTAssertEqual(Formato.crediti(1), "1 credito")
+        XCTAssertEqual(Formato.crediti(0), "0 crediti")
+        XCTAssertEqual(Formato.crediti(12), "12 crediti")
+        XCTAssertEqual(Formato.crediti(-1), "-1 credito")
+        XCTAssertEqual(Formato.giornate(1), "1 giornata")
+        XCTAssertEqual(Formato.giornate(5), "5 giornate")
+        XCTAssertEqual(Formato.giocatori(1), "1 giocatore")
+        XCTAssertEqual(Formato.plurale(2, "posto", "posti"), "2 posti")
+    }
+}
