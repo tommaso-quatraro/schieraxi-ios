@@ -164,6 +164,17 @@ final class WidgetRiassuntoTests: XCTestCase {
         XCTAssertNil(senza.formazione?.intervallo, "un server vecchio non lo manda")
     }
 
+    func testIlGiocatoreOsservatoScelto() throws {
+        let w = try riassunto()
+        XCTAssertEqual(w.osservato(30)?.id, 30, "tra gli osservati")
+        XCTAssertEqual(w.osservato(5)?.id, 5, "tra i miei giocatori")
+        XCTAssertEqual(w.osservato(1)?.id, 1, "tra i titolari")
+        XCTAssertEqual(w.osservato(999)?.id, 30, "se non c'e' piu' il primo osservato")
+        XCTAssertEqual(w.osservato(nil)?.id, 30, "senza scelta il primo osservato")
+        let senza = try XCTUnwrap(RiassuntoWidget.leggi(Data(#"{"giornata": 3}"#.utf8)))
+        XCTAssertNil(senza.osservato(nil))
+    }
+
     func testIlLiveMancanteOStranoNonRompe() throws {
         let senza = try XCTUnwrap(RiassuntoWidget.leggi(Data(#"{"giornata": 3}"#.utf8)))
         XCTAssertNil(senza.live)
