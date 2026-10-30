@@ -88,11 +88,21 @@ final class FumoUITests: XCTestCase {
 
     func testLegaConLeNuovePagine() {
         vaiA("Lega")
-        attendi("Aggiorna i dati")
-        for voce in ["Aggiorna le rose", "Squadre e rose", "Movimenti e storico", "Asta e riparazione", "Regole", "Aspetto", "Icona dell'app"] {
+        attendi("Aggiorna le rose")
+        for voce in ["Aggiorna le rose", "Squadre e rose", "Movimenti e storico", "Asta e riparazione", "Regole"] {
             attendiScorrendo(voce, contiene: true)
         }
-        elemento("Aspetto").tap()
+    }
+
+    func testImpostazioniDallIngranaggio() {
+        vaiA("Lega")
+        let ingranaggio = app.buttons["Impostazioni"]
+        XCTAssertTrue(ingranaggio.waitForExistence(timeout: 20), "l'ingranaggio sta accanto alla lente")
+        ingranaggio.tap()
+        for voce in ["Tema, colore e densità", "Icona dell'app"] {
+            attendiScorrendo(voce, contiene: true)
+        }
+        elemento("Tema, colore e densità").tap()
         attendi("Colore principale")
         attendiScorrendo("Animazioni ridotte", contiene: true)
     }

@@ -266,6 +266,7 @@ final class DominioTests: XCTestCase {
         XCTAssertEqual(vai("schieraxi://lega"), .sezione(.lega))
         XCTAssertEqual(vai("SCHIERAXI://Lega"), .sezione(.lega), "maiuscole e minuscole non contano")
         XCTAssertEqual(vai("schieraxi://giocatore/203"), .giocatore(203))
+        XCTAssertEqual(vai("schieraxi://impostazioni"), .impostazioni)
         XCTAssertNil(vai("schieraxi://giocatore/abc"))
         XCTAssertNil(vai("schieraxi://giocatore/0"))
         XCTAssertNil(vai("schieraxi://giocatore"))
