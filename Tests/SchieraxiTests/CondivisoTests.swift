@@ -96,3 +96,58 @@ final class CondivisoTests: XCTestCase {
         XCTAssertEqual(Condiviso.leggi().indirizzo, "https://uno.invalid", "si riscrive pulito")
     }
 }
+
+/// Il codice di collegamento del widget e la diagnostica della condivisione.
+final class CodiceWidgetTests: XCTestCase {
+    func testIlCodiceFaIlGiroCompleto() {
+        let codice = CodiceWidget.crea(indirizzo: "https://uno.invalid:8443", token: "tok_abc-123")
+        XCTAssertTrue(codice.hasPrefix("schieraxi1."))
+        XCTAssertFalse(codice.contains("="), "senza il riempimento: si copia e si incolla meglio")
+        XCTAssertFalse(codice.contains("+") || codice.contains("/"))
+        let c = CodiceWidget.leggi(codice)
+        XCTAssertEqual(c, CodiceWidget.Contenuto(i: "https://uno.invalid:8443", t: "tok_abc-123"))
+    }
+
+    func testSenzaTokenSoloIndirizzo() {
+        let c = CodiceWidget.leggi(CodiceWidget.crea(indirizzo: "https://uno.invalid", token: nil))
+        XCTAssertEqual(c?.i, "https://uno.invalid")
+        XCTAssertNil(c?.t)
+        XCTAssertNil(CodiceWidget.leggi(CodiceWidget.crea(indirizzo: "https://uno.invalid", token: ""))?.t)
+    }
+
+    func testSpaziEACapoIntornoSiIgnorano() {
+        let codice = CodiceWidget.crea(indirizzo: "https://uno.invalid", token: "t")
+        XCTAssertNotNil(CodiceWidget.leggi("  \n" + codice + "\n "))
+    }
+
+    func testUnIndirizzoSempliceVaBene() {
+        XCTAssertEqual(CodiceWidget.leggi("https://uno.invalid")?.i, "https://uno.invalid")
+    }
+
+    func testCodiciSbagliatiONemiciNonRompono() {
+        for cattivo in ["", "ciao", "schieraxi1.", "schieraxi1.!!!", "schieraxi1.e30", String(repeating: "a", count: 5000), "schieraxi1." + String(repeating: "A", count: 100)] {
+            XCTAssertNil(CodiceWidget.leggi(cattivo), cattivo)
+        }
+    }
+
+    func testLaDiagnosticaDiceCosaManca() {
+        let cartella = FileManager.default.temporaryDirectory.appendingPathComponent("diag-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
+        Condiviso.cartellaDiProva = cartella
+        defer { Condiviso.cartellaDiProva = nil; try? FileManager.default.removeItem(at: cartella) }
+        var d = Condiviso.diagnostica(info: ["ALTAppGroups": ["group.it.tommaso.schieraxi.XYZ"]])
+        XCTAssertEqual(d.scrittiDaSideStore, ["group.it.tommaso.schieraxi.XYZ"])
+        XCTAssertEqual(d.provati.first, "group.it.tommaso.schieraxi.XYZ")
+        XCTAssertFalse(d.filePresente)
+        XCTAssertFalse(d.haIndirizzo)
+        XCTAssertTrue(d.breve.contains("file no"), d.breve)
+        Condiviso.sincronizza(indirizzo: "https://uno.invalid", token: "tok")
+        d = Condiviso.diagnostica(info: [:])
+        XCTAssertTrue(d.filePresente)
+        XCTAssertTrue(d.haIndirizzo)
+        XCTAssertTrue(d.haToken)
+        XCTAssertNotNil(d.ultimaScrittura)
+        XCTAssertTrue(d.breve.contains("token sì"), d.breve)
+        XCTAssertTrue(d.lungo.contains("Gruppi provati"))
+    }
+}
