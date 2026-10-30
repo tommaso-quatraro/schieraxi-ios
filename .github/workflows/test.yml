@@ -59,13 +59,21 @@ jobs:
         if: failure()
         run: |
           grep -E "error:|Test Case .* failed|\*\* TEST FAILED|failed:" build/test.log | head -n 80 || true
-      - name: Carica i risultati se qualcosa è andato storto
+      - name: Maschera il log (il repository è pubblico)
+        if: failure()
+        env:
+          FANTA_HOST: ${{ secrets.FANTA_HOST }}
+          FANTA_PORT: ${{ secrets.FANTA_PORT }}
+        run: |
+          # Nel log di compilazione c'è la riga di comando con l'indirizzo vero: si toglie prima di caricarlo.
+          python3 -I scripts/maschera_log.py build/test.log build/test-mascherato.log
+          if [ -n "$FANTA_HOST" ] && grep -qF "$FANTA_HOST" build/test-mascherato.log; then echo "indirizzo ancora presente: non carico il log"; rm -f build/test-mascherato.log; fi
+      - name: Carica il log mascherato se qualcosa è andato storto
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: risultati-test
-          path: |
-            build/test.xcresult
-            build/test.log
+          # solo il log mascherato: il pacchetto .xcresult non si carica (può contenere le impostazioni di compilazione con l'indirizzo)
+          path: build/test-mascherato.log
           retention-days: 7
           if-no-files-found: ignore

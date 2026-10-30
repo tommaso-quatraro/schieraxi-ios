@@ -65,9 +65,18 @@ jobs:
           # il sorgente di SideStore: l'indirizzo fisso è .../releases/latest/download/sorgente.json
           python3 scripts/genera_sorgente.py "$GITHUB_REPOSITORY" "${{ github.run_number }}" Schieraxi.ipa
           gh release create "build-${{ github.run_number }}" Schieraxi.ipa sorgente.json --title "Build ${{ github.run_number }}" --notes "IPA non firmato, da installare con SideStore. Aggiornamenti automatici: aggiungi in SideStore il sorgente https://github.com/$GITHUB_REPOSITORY/releases/latest/download/sorgente.json" --repo "$GITHUB_REPOSITORY"
+      - name: Maschera il log (il repository è pubblico)
+        if: failure()
+        env:
+          FANTA_HOST: ${{ secrets.FANTA_HOST }}
+          FANTA_PORT: ${{ secrets.FANTA_PORT }}
+        run: |
+          python3 -I scripts/maschera_log.py build.log build-mascherato.log
+          if [ -n "$FANTA_HOST" ] && grep -qF "$FANTA_HOST" build-mascherato.log; then echo "indirizzo ancora presente: non carico il log"; rm -f build-mascherato.log; fi
       - name: Log in caso di errore
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: log-compilazione
-          path: build.log
+          path: build-mascherato.log
+          if-no-files-found: ignore
