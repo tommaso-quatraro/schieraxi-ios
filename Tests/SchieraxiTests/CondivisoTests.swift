@@ -56,21 +56,6 @@ final class CondivisoTests: XCTestCase {
         XCTAssertEqual(d.indirizzo, "https://uno.invalid", "l'indirizzo è del telefono, non di un utente")
     }
 
-    func testLArchivioSpecchiatoCopiaIlToken() {
-        let base = MemoriaToken()
-        let archivio = ArchivioSpecchiato(base: base)
-        archivio.salva("tok-1", server: "https://uno.invalid")
-        XCTAssertEqual(base.leggi(server: "https://uno.invalid"), "tok-1")
-        XCTAssertEqual(Condiviso.leggi().token(per: "https://uno.invalid"), "tok-1")
-        Condiviso.salvaRiassunto(RiassuntoOggi(giornata: 1, inizio: nil, modulo: nil, punti: nil, daControllare: 0, probabili: nil, scaricatoIl: Date()))
-        archivio.cancella(server: "https://altro.invalid")
-        XCTAssertNotNil(Condiviso.leggi().token, "togliere il token di un altro server non tocca questo")
-        archivio.cancella(server: "https://uno.invalid")
-        XCTAssertNil(base.leggi(server: "https://uno.invalid"))
-        XCTAssertNil(Condiviso.leggi().token)
-        XCTAssertNil(Condiviso.leggi().riassunto)
-    }
-
     func testIlRiassuntoVieneDaOggi() throws {
         let oggi: Oggi = try Decodifica.decodifica(try Fixture.dati("oggi"))
         let r = RiassuntoOggi(oggi: oggi)
@@ -190,5 +175,118 @@ final class DubbiWidgetTests: XCTestCase {
 
     func testDescrizioneSenzaTipo() {
         XCTAssertEqual(DubbioRiassunto(id: 1, nome: "A", ruolo: nil, tipo: nil, pVoto: nil).descrizione, "Da controllare")
+    }
+}
+
+/// Il token del widget (fw_): l'unica credenziale che esce dall'app; quello della sessione resta nel Keychain.
+final class TokenWidgetTests: XCTestCase {
+    private let indirizzo = "https://prova-token-widget.invalid"
+    private var cartella: URL!
+    private var memoria: UserDefaults!
+    private var nomeSuite = ""
+
+    override func setUp() {
+        super.setUp()
+        cartella = FileManager.default.temporaryDirectory.appendingPathComponent("tw-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
+        Condiviso.cartellaDiProva = cartella
+        nomeSuite = "prova-tw-\(UUID().uuidString)"
+        memoria = UserDefaults(suiteName: nomeSuite)
+        TokenWidget.archivio = MemoriaToken()
+    }
+
+    override func tearDown() {
+        Condiviso.cartellaDiProva = nil
+        try? FileManager.default.removeItem(at: cartella)
+        memoria.removePersistentDomain(forName: nomeSuite)
+        TokenWidget.archivio = KeychainToken(servizio: TokenWidget.servizio)
+        super.tearDown()
+    }
+
+    private func server(_ gestore: @escaping @Sendable (String, String) throws -> Data) -> ServerDiProva {
+        ServerDiProva(indirizzo: indirizzo) { metodo, percorso, _ in try gestore(metodo, percorso) }
+    }
+
+    func testIlTokenDelWidgetSiRiconosce() {
+        XCTAssertTrue(TokenWidget.valido("fw_abcdefghijklmnop"))
+        XCTAssertFalse(TokenWidget.valido("abcdefghijklmnop"), "un token di sessione non e' un token del widget")
+        XCTAssertFalse(TokenWidget.valido("fw_"))
+        XCTAssertFalse(TokenWidget.valido("fw_con spazio e altro"))
+        XCTAssertFalse(TokenWidget.valido("fw_" + String(repeating: "a", count: 600)))
+    }
+
+    func testDopoLAccessoSiChiedeIlTokenDelWidgetEVaNelFileCondiviso() async {
+        let s = server { metodo, percorso in
+            if metodo == "POST", percorso == "/api/account/token-widget" { return Data(#"{"token": "fw_tokenDiProva123456", "scade": "2027-01-28T12:00:00", "etichetta": "widget"}"#.utf8) }
+            throw ErroreApi.server("niente")
+        }
+        await TokenWidget.assicura(server: s, memoria: memoria)
+        XCTAssertEqual(s.quante("POST /api/account/token-widget"), 1)
+        XCTAssertEqual(TokenWidget.leggi(server: indirizzo), "fw_tokenDiProva123456")
+    }
+
+    func testNelFileCondivisoNonVaMaiIlTokenDiSessione() async {
+        // la sessione sta nel Keychain dell'app; il file condiviso riceve solo il token del widget
+        let sessione = MemoriaToken()
+        sessione.salva("token-di-sessione-segreto", server: indirizzo)
+        let s = server { _, _ in Data(#"{"token": "fw_tokenDiProva123456", "scade": "2027-01-28T12:00:00"}"#.utf8) }
+        await TokenWidget.assicura(server: s, memoria: memoria)
+        Condiviso.sincronizza(indirizzo: indirizzo, token: TokenWidget.leggi(server: indirizzo))
+        let file = (try? String(contentsOf: cartella.appendingPathComponent("condiviso.json"), encoding: .utf8)) ?? ""
+        XCTAssertFalse(file.contains("token-di-sessione-segreto"))
+        XCTAssertTrue(file.contains("fw_tokenDiProva123456"))
+        XCTAssertFalse(Condiviso.diagnostica().lungo.contains("fw_"), "la diagnostica non stampa mai un token")
+        XCTAssertFalse(Condiviso.diagnostica().breve.contains("fw_"))
+    }
+
+    func testUnTokenChePuoServireNonSiChiedeDiNuovo() async {
+        TokenWidget.archivio.salva("fw_esistenteDiProva1234", server: indirizzo)
+        memoria.set("2099-01-01T00:00:00", forKey: "tokenWidgetScade|" + indirizzo)
+        let s = server { _, _ in throw ErroreApi.server("non doveva chiamare") }
+        await TokenWidget.assicura(server: s, memoria: memoria)
+        XCTAssertEqual(s.quante("token-widget"), 0)
+        XCTAssertEqual(TokenWidget.leggi(server: indirizzo), "fw_esistenteDiProva1234")
+    }
+
+    func testRinnovoQuandoStaPerScadere() {
+        let adesso = ISO8601DateFormatter().date(from: "2027-01-01T12:00:00+01:00") ?? Date()
+        XCTAssertTrue(TokenWidget.daRinnovare(token: nil, scade: "2099-01-01T00:00:00", adesso: adesso))
+        XCTAssertTrue(TokenWidget.daRinnovare(token: "fw_x", scade: nil, adesso: adesso))
+        XCTAssertTrue(TokenWidget.daRinnovare(token: "fw_x", scade: "non una data", adesso: adesso))
+        XCTAssertTrue(TokenWidget.daRinnovare(token: "fw_x", scade: "2027-01-05T12:00:00", adesso: adesso), "meno di 7 giorni")
+        XCTAssertFalse(TokenWidget.daRinnovare(token: "fw_x", scade: "2027-02-01T12:00:00", adesso: adesso))
+    }
+
+    func testUnTokenStranoDelServerNonSiSalva() async {
+        let s = server { _, _ in Data(#"{"token": "sessione-finta", "scade": "2027-01-28T12:00:00"}"#.utf8) }
+        await TokenWidget.assicura(server: s, memoria: memoria)
+        XCTAssertNil(TokenWidget.leggi(server: indirizzo))
+    }
+
+    func testUnServerSenzaAccountNonFaDanni() async {
+        let s = server { _, _ in throw ErroreApi.risposta(404) }
+        await TokenWidget.assicura(server: s, memoria: memoria)
+        XCTAssertNil(TokenWidget.leggi(server: indirizzo))
+    }
+
+    func testUscendoIlServerTogliIlTokenEIlTelefonoLoDimentica() async {
+        TokenWidget.archivio.salva("fw_daRevocare1234567", server: indirizzo)
+        Condiviso.sincronizza(indirizzo: indirizzo, token: "fw_daRevocare1234567")
+        let s = server { metodo, percorso in
+            if metodo == "DELETE", percorso == "/api/account/token-widget" { return Data(#"{"revocato": true}"#.utf8) }
+            throw ErroreApi.server("niente")
+        }
+        await TokenWidget.revoca(server: s, memoria: memoria)
+        XCTAssertEqual(s.quante("DELETE /api/account/token-widget"), 1)
+        XCTAssertNil(TokenWidget.leggi(server: indirizzo))
+        XCTAssertNil(Condiviso.leggi().token)
+    }
+
+    func testAncheSeIlServerNonRispondeIlTelefonoDimentica() async {
+        TokenWidget.archivio.salva("fw_daRevocare1234567", server: indirizzo)
+        Condiviso.sincronizza(indirizzo: indirizzo, token: "fw_daRevocare1234567")
+        await TokenWidget.revoca(server: server { _, _ in throw ErroreApi.rete("spento") }, memoria: memoria)
+        XCTAssertNil(TokenWidget.leggi(server: indirizzo))
+        XCTAssertNil(Condiviso.leggi().token)
     }
 }
