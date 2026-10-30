@@ -120,7 +120,7 @@ final class ServerHTTPTests: XCTestCase {
         }
         ProtocolloFinto.gestore = { _ in throw URLError(.notConnectedToInternet) }
         do { _ = try await server.grezzo("/api/x"); XCTFail("doveva lanciare") } catch {
-            XCTAssertEqual(error.localizedDescription, ErroreApi.rete("").errorDescription, "il messaggio suggerisce di controllare Tailscale")
+            XCTAssertEqual(error.localizedDescription, ErroreApi.rete("").errorDescription, "il messaggio suggerisce di controllare la connessione")
         }
     }
 

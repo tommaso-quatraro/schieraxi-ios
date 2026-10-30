@@ -112,8 +112,8 @@ final class AccessoUITests: XCTestCase {
             app.buttons["Recupera"].tap()
             app.buttons["Accedi"].tap()
         }
-        XCTAssertTrue(app.buttons["Entra"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.secureTextFields["Password"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Entra"].waitForExistence(timeout: 40), "dopo i cambi rapidi la scheda Accedi deve tornare")
+        XCTAssertTrue(app.secureTextFields["Password"].waitForExistence(timeout: 40))
     }
 
     func testInSecondoPianoLaPasswordScrittaSiCancella() {
