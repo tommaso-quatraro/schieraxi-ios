@@ -134,3 +134,56 @@ final class ScambiNVmTests: XCTestCase {
         XCTAssertNil(v.errore)
     }
 }
+
+/// I tre modi degli scambi e il contatore delle ricerche.
+@MainActor
+final class ScambiModiTests: XCTestCase {
+    func testIlContatoreInParole() {
+        XCTAssertEqual(LimiteRicerche(restano: 3, tetto: 20).testo, "Ne restano 3 oggi su 20")
+        XCTAssertEqual(LimiteRicerche(restano: 1, tetto: 20).testo, "Ne resta 1 oggi su 20")
+        XCTAssertEqual(LimiteRicerche(restano: 0, tetto: 20).testo, "Ne restano 0 oggi su 20")
+        XCTAssertNil(LimiteRicerche(restano: nil, tetto: nil).testo, "l'amministratore non ha un limite: nessun contatore")
+        XCTAssertNil(LimiteRicerche(restano: 3, tetto: nil).testo)
+    }
+
+    func testIlContatoreSiLegge() async {
+        let s = ServerDiProva { _, percorso, _ in
+            if percorso == "/api/scambi/limite" { return Data(#"{"restano": 17, "tetto": 20}"#.utf8) }
+            throw ErroreApi.server("niente")
+        }
+        let vm = ScambiViewModel(server: s)
+        XCTAssertNil(vm.limite)
+        await vm.caricaLimite()
+        XCTAssertEqual(vm.limite?.restano, 17)
+        XCTAssertEqual(s.quante("GET /api/scambi/limite"), 1)
+    }
+
+    func testAdminSenzaLimiteENessunContatore() async {
+        let s = ServerDiProva { _, _, _ in Data(#"{"restano": null, "tetto": null}"#.utf8) }
+        let vm = ScambiViewModel(server: s)
+        await vm.caricaLimite()
+        XCTAssertNil(vm.limite?.testo)
+    }
+
+    func testUnServerSenzaLaRottaNonRompe() async {
+        let vm = ScambiViewModel(server: ServerDiProva.chePrecipita())
+        await vm.caricaLimite()
+        XCTAssertNil(vm.limite)
+    }
+
+    func testLaRispostaDelleProposteAggiornaIlContatore() async {
+        let s = ServerDiProva { _, percorso, _ in
+            if percorso.hasPrefix("/api/scambi/proposte") { return Data(#"{"proposte": [], "ricerche": {"restano": 4, "tetto": 20}}"#.utf8) }
+            throw ErroreApi.server("niente")
+        }
+        let vm = ScambiViewModel(server: s)
+        await vm.caricaProposte()
+        XCTAssertEqual(vm.limite?.restano, 4)
+        XCTAssertEqual(s.quante("/api/scambi/limite"), 0, "il contatore e' gia' nella risposta: niente richiesta in piu'")
+    }
+
+    func testITreModi() {
+        XCTAssertEqual(ModoScambi.allCases.map(\.rawValue), ["Trova per me", "Costruisci", "Valuta un'offerta"])
+        XCTAssertEqual(ScambiViewModel(server: ServerDiProva.chePrecipita()).modo, .trova)
+    }
+}

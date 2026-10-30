@@ -81,9 +81,14 @@ final class FumoUITests: XCTestCase {
     func testScambiConOffertaEAnalisi() {
         vaiA("Scambi")
         XCTAssertTrue(app.buttons["Cerca scambi"].waitForExistence(timeout: 20), "le proposte si cercano con il pulsante")
-        attendi("Ho ricevuto un'offerta")
+        for modo in ["Trova per me", "Costruisci", "Valuta un'offerta"] {
+            XCTAssertTrue(app.buttons[modo].waitForExistence(timeout: 10), "manca il modo «\(modo)»")
+        }
         attendi("Chi accetta più volentieri")
-        attendi("Analizza uno scambio a mano")
+        app.buttons["Valuta un'offerta"].tap()
+        attendi("Ho ricevuto un'offerta")
+        app.buttons["Costruisci"].tap()
+        attendi("Squadra")
     }
 
     func testLegaConLeNuovePagine() {
