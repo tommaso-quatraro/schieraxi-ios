@@ -1,0 +1,142 @@
+import XCTest
+@testable import Schieraxi
+
+/// La prova di connessione: un 401 è «raggiunto», e ogni altro caso ha il suo esito chiaro.
+final class ProvaConnessioneTests: XCTestCase {
+    private func sessione(_ gestore: @escaping (URLRequest) throws -> (Int, Data)) -> URLSession {
+        let c = URLSessionConfiguration.ephemeral
+        c.protocolClasses = [ProtocolloFinto.self]
+        ProtocolloFinto.gestore = { r in
+            let (codice, dati) = try gestore(r)
+            return (HTTPURLResponse(url: r.url ?? URL(fileURLWithPath: "/"), statusCode: codice, httpVersion: nil, headerFields: nil) ?? HTTPURLResponse(), dati)
+        }
+        return URLSession(configuration: c)
+    }
+
+    override func tearDown() {
+        ProtocolloFinto.gestore = nil
+        super.tearDown()
+    }
+
+    private let stato = Data(#"{"stagione": "2026-27", "versione": "1.41", "mia_squadra": "Schiera FC", "prossima_giornata": 10}"#.utf8)
+
+    func test200ConLoStatoDiSchieraxiERaggiunto() async {
+        let s = sessione { _ in (200, self.stato) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .raggiunto(versione: "1.41", squadra: "Schiera FC"))
+        XCTAssertTrue(e.raggiunto)
+        XCTAssertTrue(e.dettaglio.contains("1.41"))
+    }
+
+    func test401ERaggiuntoEChiedeAccesso() async {
+        let s = sessione { _ in (401, Data(#"{"detail": "Accesso richiesto", "multiutente": true}"#.utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid:8443", sessione: s)
+        XCTAssertEqual(e, .chiedeAccesso)
+        XCTAssertTrue(e.raggiunto, "con gli account accesi il server risponde 401: è un successo")
+    }
+
+    func test401SenzaIlFormatoDiSchieraxiNonELoStessoServer() async {
+        let s = sessione { _ in (401, Data("<html>Login</html>".utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .nonSchieraxi)
+        XCTAssertFalse(e.raggiunto)
+    }
+
+    func test403() async {
+        let s = sessione { _ in (403, Data("vietato".utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .rifiutato(403))
+        XCTAssertFalse(e.raggiunto)
+    }
+
+    func test404NonEUnServerDiSchieraxi() async {
+        let s = sessione { _ in (404, Data(#"{"detail": "Not Found"}"#.utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .nonSchieraxi)
+    }
+
+    func testUnaPaginaHTMLConCodice200NonEUnServerDiSchieraxi() async {
+        let s = sessione { _ in (200, Data("<!doctype html><html><body>Benvenuto</body></html>".utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .nonSchieraxi)
+    }
+
+    func testUnJSONQualsiasiNonEUnServerDiSchieraxi() async {
+        let s = sessione { _ in (200, Data(#"{"ciao": 1}"#.utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .nonSchieraxi)
+    }
+
+    func testUnErroreDelServer() async {
+        let s = sessione { _ in (503, Data()) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .erroreServer(503))
+    }
+
+    func testTimeout() async {
+        let s = sessione { _ in throw URLError(.timedOut) }
+        let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+        XCTAssertEqual(e, .timeout)
+    }
+
+    func testCertificatoNonValido() async {
+        for codice: URLError.Code in [.serverCertificateUntrusted, .secureConnectionFailed, .serverCertificateHasBadDate] {
+            let s = sessione { _ in throw URLError(codice) }
+            let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+            XCTAssertEqual(e, .certificato, "\(codice)")
+        }
+    }
+
+    func testServerSpentoOSenzaRete() async {
+        for codice: URLError.Code in [.cannotFindHost, .cannotConnectToHost, .notConnectedToInternet, .networkConnectionLost] {
+            let s = sessione { _ in throw URLError(codice) }
+            let e = await ProvaConnessione.prova("https://prova-connessione.invalid", sessione: s)
+            XCTAssertEqual(e, .nonRaggiungibile, "\(codice)")
+        }
+    }
+
+    func testIndirizziNonAmmessiNonFannoNessunaRichiesta() async {
+        let chiamate = Scatola<Int>()
+        chiamate.valore = 0
+        let s = sessione { _ in chiamate.valore = (chiamate.valore ?? 0) + 1; return (200, self.stato) }
+        for cattivo in ["", "   ", "http://server.example.invalid", "ftp://x.invalid", "https://utente:pw@x.invalid", "non un indirizzo"] {
+            let e = await ProvaConnessione.prova(cattivo, sessione: s)
+            XCTAssertEqual(e, .indirizzoNonValido, cattivo)
+        }
+        XCTAssertEqual(chiamate.valore, 0)
+    }
+
+    func testLaProvaNonManda5IlTokenENonToccaLaSessione() async {
+        let visto = Scatola<String>()
+        let s = sessione { r in visto.valore = r.value(forHTTPHeaderField: "Authorization") ?? "nessuno"; return (401, Data(#"{"detail": "x"}"#.utf8)) }
+        let avvisi = Scatola<Int>()
+        avvisi.valore = 0
+        let osservatore = NotificationCenter.default.addObserver(forName: .accessoRichiesto, object: nil, queue: .main) { n in
+            // Solo gli avvisi del nostro indirizzo: altri test possono lasciare 401 in coda.
+            if (n.userInfo?["server"] as? String)?.contains("prova-connessione-token") == true { avvisi.valore = (avvisi.valore ?? 0) + 1 }
+        }
+        defer { NotificationCenter.default.removeObserver(osservatore) }
+        _ = await ProvaConnessione.prova("https://prova-connessione-token.invalid", sessione: s)
+        XCTAssertEqual(visto.valore, "nessuno", "il token non viaggia verso un indirizzo ancora da provare")
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(avvisi.valore, 0, "un 401 della prova non manda l'app alla schermata di accesso")
+    }
+
+    func testPulisciGliIndirizzi() {
+        XCTAssertEqual(ProvaConnessione.pulisci("  https://server.example.invalid:8443/ "), "https://server.example.invalid:8443")
+        XCTAssertEqual(ProvaConnessione.pulisci("https://server.example.invalid///"), "https://server.example.invalid")
+        XCTAssertNil(ProvaConnessione.pulisci("server.example.invalid"))
+        XCTAssertEqual(ProvaConnessione.pulisci("http://localhost:8000"), "http://localhost:8000")
+    }
+
+    func testOgniEsitoHaTestiEIcona() {
+        let tutti: [EsitoConnessione] = [.raggiunto(versione: nil, squadra: nil), .chiedeAccesso, .rifiutato(403), .nonSchieraxi, .nonRaggiungibile,
+                                         .certificato, .timeout, .erroreServer(500), .indirizzoNonValido]
+        for e in tutti {
+            XCTAssertFalse(e.titolo.isEmpty)
+            XCTAssertFalse(e.dettaglio.isEmpty)
+            XCTAssertFalse(e.icona.isEmpty)
+        }
+        XCTAssertEqual(tutti.filter(\.raggiunto).count, 2)
+    }
+}
