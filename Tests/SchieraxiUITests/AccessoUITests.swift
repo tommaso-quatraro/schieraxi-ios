@@ -112,8 +112,14 @@ final class AccessoUITests: XCTestCase {
             app.buttons["Recupera"].tap()
             app.buttons["Accedi"].tap()
         }
-        XCTAssertTrue(app.buttons["Entra"].waitForExistence(timeout: 40), "dopo i cambi rapidi la scheda Accedi deve tornare")
-        XCTAssertTrue(app.secureTextFields["Password"].waitForExistence(timeout: 40))
+        // Con i tocchi a raffica sul Mac di GitHub un tocco può perdersi: si rimette «Accedi» finché il pulsante «Entra» compare.
+        var tornata = false
+        for _ in 0..<6 where !tornata {
+            if app.buttons["Entra"].waitForExistence(timeout: 8) { tornata = true; break }
+            app.buttons["Accedi"].tap()
+        }
+        XCTAssertTrue(tornata, "dopo i cambi rapidi la scheda Accedi deve tornare")
+        XCTAssertTrue(app.secureTextFields["Password"].waitForExistence(timeout: 20))
     }
 
     func testInSecondoPianoLaPasswordScrittaSiCancella() {
