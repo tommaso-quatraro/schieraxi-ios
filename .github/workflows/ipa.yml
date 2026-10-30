@@ -40,6 +40,15 @@ jobs:
         run: |
           mkdir -p Payload
           cp -R build/Schieraxi.xcarchive/Products/Applications/Schieraxi.app Payload/
+          # App Group con l'Apple ID gratuito: i permessi (entitlements) vanno dentro i programmi dell'IPA non firmato, altrimenti
+          # SideStore non sa che servono e non registra il gruppo. ldid li incorpora (SideStore poi firma da capo).
+          brew install ldid > /dev/null 2>&1 || echo "ldid non installato: niente App Group nell'IPA"
+          if command -v ldid > /dev/null; then
+            ldid -SConfig/SchieraxiWidget.entitlements Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget || echo "ldid: widget non riuscito"
+            ldid -SConfig/Schieraxi.entitlements Payload/Schieraxi.app/Schieraxi || echo "ldid: app non riuscito"
+            ldid -e Payload/Schieraxi.app/Schieraxi | grep -A2 application-groups || echo "ATTENZIONE: permessi non trovati nell'app"
+            ldid -e Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget | grep -A2 application-groups || echo "ATTENZIONE: permessi non trovati nel widget"
+          fi
           zip -qry Schieraxi.ipa Payload
           ls -la Schieraxi.ipa
           # l'estensione del widget deve stare dentro l'app (PlugIns), con il suo eseguibile

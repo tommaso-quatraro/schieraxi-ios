@@ -48,6 +48,7 @@ Il server e la logica stanno in `schieraxi` (`C:\Users\utente\Progetti\schieraxi
 ## Punti delicati
 - Mai in git: firme, certificati, profili, password, Apple ID, indirizzo del Pi. Le fixture hanno i nomi di una lega reale: accettato il 29/10/2026 (repo pubblico).
 - Installazione: IPA non firmato, lo firma SideStore con Apple ID gratuito: certificato 7 giorni, max 3 app, LocalDevVPN accesa, una sola VPN alla volta. Nessuna notifica push (APNs): avvisi via ntfy + `schieraxi://`.
+- App Group (indirizzo, token e ultimo riassunto condivisi col widget): `Sources/Support/Condiviso.swift`. Con l'Apple ID gratuito funziona se i permessi sono dentro l'IPA (ldid in `ipa.yml`) e SideStore scrive il nome vero in Info.plist `ALTAppGroups`: l'app lo legge a runtime. NON provato su un telefono vero: se il widget chiede ancora l'accesso o l'indirizzo, il gruppo non e' stato registrato (ripiego: indirizzo nelle impostazioni del widget).
 - Se SideStore protesta per i limiti, si toglie il target `SchieraxiWidget` e la riga `dependencies` da `project.yml`.
 - Modalita' demo: argomento di lancio `-DEMO` (+ `-DEMO_SCHERMATA`, `-DEMO_FONDO`, `-DEMO_ORIENTAMENTO`, `-DEMO_CERCA`); in demo l'indirizzo vero non compare e il Keychain non si usa. I test UI e gli screenshot dipendono da questo: non romperlo.
 - Concorrenza dei workflow: `test.yml` annulla le corse vecchie dello stesso ramo; `ipa.yml` ha bisogno di `contents: write` per la release.
