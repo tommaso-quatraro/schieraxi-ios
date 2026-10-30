@@ -125,3 +125,83 @@ final class DisegnoVoltoTests: XCTestCase {
         }
     }
 }
+
+/// Avatar versione 2: tratti grossolani (docs/AVATAR.md, sezione 8, VETTORE2).
+@MainActor
+final class AvatarVersione2Tests: XCTestCase {
+    private func tratti(_ json: String) -> TrattiVolto? { try? JSONDecoder().decode(TrattiVolto.self, from: Data(json.utf8)) }
+
+    private func elenco(_ id: Int, _ json: String?) -> [Int] {
+        GeneratoreVolto.estrai(id: id, tratti: json.flatMap { tratti($0) }).elenco
+    }
+
+    func testIVettoriDellaVersione2() {
+        XCTAssertEqual(elenco(1, #"{"p":0,"c":3,"a":"L","b":1}"#), [0, 0, 4, 3, 3, 1, 0, 1, 0, 1])
+        XCTAssertEqual(elenco(2, #"{"p":6,"c":0,"a":"R","b":0}"#), [6, 0, 0, 0, 0, 0, 0, 1, 0, 0])
+        XCTAssertEqual(elenco(3, #"{"c":5,"a":"C","b":1}"#), [0, 2, 7, 5, 4, 0, 0, 0, 0, 0])
+        XCTAssertEqual(elenco(100, #"{"a":"I","b":1}"#), [1, 2, 2, 7, 3, 0, 1, 0, 1, 1])
+        XCTAssertEqual(elenco(4567, #"{"p":2}"#), [2, 0, 0, 7, 0, 2, 2, 0, 0, 0])
+        XCTAssertEqual(elenco(7627, #"{"p":9,"a":"X"}"#), [0, 0, 4, 1, 2, 1, 2, 0, 0, 0], "campi non validi: come senza tratti")
+    }
+
+    func testSenzaTrattiEIdenticaAllaVersione1() {
+        for id in [0, 1, 2, 3, 100, 4567, 7627, 12345] {
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: nil), GeneratoreVolto.estrai(id: id), "id \(id)")
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: TrattiVolto()), GeneratoreVolto.estrai(id: id), "tratti vuoti, id \(id)")
+        }
+    }
+
+    func testIVettoriDellaVersione1NonCambiano() {
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 1).elenco, [5, 0, 10, 0, 3, 1, 0, 1, 0, 1])
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 7627).elenco, [0, 0, 4, 1, 2, 1, 2, 0, 0, 0])
+    }
+
+    func testITrattiSiLeggonoConTolleranza() {
+        XCTAssertEqual(tratti(#"{"p": "ciao", "c": 3}"#), TrattiVolto(p: nil, c: 3, a: nil, b: nil))
+        XCTAssertEqual(tratti(#"{"a": 5, "b": 1}"#), TrattiVolto(p: nil, c: nil, a: nil, b: 1))
+        XCTAssertEqual(tratti("{}"), TrattiVolto())
+    }
+
+    func testIlDepositoLeggeLaRispostaDelServer() {
+        let corpo = #"{"versione": 2, "tratti": {"1": {"p": 0, "c": 3, "a": "L", "b": 1}, "2": {"p": 6}, "xx": {"p": 1}, "3": "rotto", "-5": {"p": 1}}}"#
+        let m = DepositoTratti.leggi(Data(corpo.utf8))
+        XCTAssertEqual(m?.count, 2, "le voci rotte si saltano, le altre restano")
+        XCTAssertEqual(m?[1], TrattiVolto(p: 0, c: 3, a: "L", b: 1))
+        XCTAssertEqual(m?[2]?.p, 6)
+        XCTAssertNil(DepositoTratti.leggi(Data("[]".utf8)))
+        XCTAssertNil(DepositoTratti.leggi(Data()))
+        XCTAssertNil(DepositoTratti.leggi(Data(#"{"versione": 2}"#.utf8)))
+    }
+
+    func testIlDepositoScaricaEUnVoltoCambiaConITratti() async throws {
+        let cartella = FileManager.default.temporaryDirectory.appendingPathComponent("tratti-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: cartella) }
+        let s = ServerDiProva { _, percorso, _ in
+            if percorso == "/api/avatar" { return Data(#"{"versione": 2, "tratti": {"4567": {"p": 5}}}"#.utf8) }
+            throw ErroreApi.server("niente")
+        }
+        let d = DepositoTratti(cartella: cartella)
+        XCTAssertNil(d.tratti(per: 4567))
+        await d.caricaSeServe(server: s)
+        await d.caricaSeServe(server: s)
+        XCTAssertEqual(s.quante("/api/avatar"), 1, "una volta sola per apertura")
+        XCTAssertEqual(d.tratti(per: 4567)?.p, 5)
+        XCTAssertEqual(d.versione, 1)
+        // al riavvio i tratti ci sono già (disco)
+        let dopo = DepositoTratti(cartella: cartella)
+        XCTAssertEqual(dopo.tratti(per: 4567)?.p, 5)
+    }
+
+    func testUnErroreDelServerNonRompeEPoiRiprova() async throws {
+        let cartella = FileManager.default.temporaryDirectory.appendingPathComponent("tratti-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: cartella) }
+        let d = DepositoTratti(cartella: cartella)
+        await d.caricaSeServe(server: ServerDiProva.chePrecipita())
+        XCTAssertEqual(d.quanti, 0)
+        let s = ServerDiProva { _, _, _ in Data(#"{"tratti": {"1": {"b": 1}}}"#.utf8) }
+        await d.caricaSeServe(server: s)
+        XCTAssertEqual(d.quanti, 1, "dopo un errore ci riprova")
+    }
+}
