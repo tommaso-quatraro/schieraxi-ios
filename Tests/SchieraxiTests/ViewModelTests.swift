@@ -116,6 +116,38 @@ final class FormazioneViewModelTests: XCTestCase {
         XCTAssertNil(vm.moduloScelto)
     }
 
+    func testScegliereUnoStileAzzeraIlModuloEIPuntiSiRicalcolano() async throws {
+        let (vm, f) = try await caricata(server())
+        let livelli = try XCTUnwrap(f.livelli)
+        let primo = try XCTUnwrap(livelli.first)
+        // un modulo scelto a mano resta fisso (anche se si ricarica la vista)...
+        let altro = try XCTUnwrap(primo.moduli.first { $0.modulo != primo.modulo })
+        vm.rischio = primo.rischio
+        vm.scegliModulo(altro.modulo)
+        XCTAssertEqual(vm.vista(f).punti, altro.punteggioAtteso, accuracy: 0.001)
+        XCTAssertEqual(vm.vista(f).modulo, altro.modulo)
+        // ...finché si tocca uno stile, anche lo stesso: torna il modulo proposto e i punti di quello
+        vm.scegliStile(primo.rischio)
+        XCTAssertNil(vm.moduloScelto)
+        XCTAssertEqual(vm.vista(f).modulo, primo.modulo)
+        XCTAssertEqual(vm.vista(f).punti, primo.punteggioAtteso, accuracy: 0.001)
+    }
+
+    func testStileConDescrizioneESenza() throws {
+        let nuovo = Data(#"""
+        {"giornata": 9, "modulo": "4-3-3", "punteggio_atteso": 60.5, "titolari": [], "panchina": [], "stile_consigliato": 0,
+         "livelli": [{"rischio": -1, "stile": -1, "nome": "Sicura", "descrizione": "Preferisce i titolari più sicuri.", "modulo": "5-3-2",
+                      "punteggio_atteso": 59.0, "moduli": []}]}
+        """#.utf8)
+        let f: Formazione = try Decodifica.decodifica(nuovo, snake: true)
+        XCTAssertEqual(f.stileConsigliato, 0)
+        XCTAssertEqual(f.livelli?.first?.stile, -1)
+        XCTAssertEqual(f.livelli?.first?.descrizione, "Preferisce i titolari più sicuri.")
+        // un server vecchio non manda i campi nuovi: la formazione si legge lo stesso
+        let vecchia: Formazione = try Fixture.decodifica("formazione")
+        XCTAssertNotNil(vecchia.livelli)
+    }
+
     func testModificaAManoESostituzione() async throws {
         let s = server()
         let (vm, f) = try await caricata(s)

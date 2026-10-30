@@ -56,7 +56,7 @@ final class FumoUITests: XCTestCase {
     func testFormazioneConCampoEModificaAMano() {
         vaiA("Formazione")
         attendi("Campo")
-        attendi("Stile")
+        attendi("Modulo proposto", contiene: true)
         attendi("Panchina")
         let modifica = app.buttons["Modifica a mano"]
         XCTAssertTrue(modifica.waitForExistence(timeout: 20), "il pulsante «Modifica a mano» deve esserci")
@@ -114,7 +114,7 @@ final class FumoUITests: XCTestCase {
 
     func testSchedaDiUnGiocatoreSiApreEDiChiude() {
         // un tocco su una riga di Oggi apre la scheda (foglio) con la previsione, la forma e il grafico dei voti
-        let riga = app.buttons.matching(NSPredicate(format: "label CONTAINS 'punti attesi'")).firstMatch
+        let riga = app.buttons.matching(NSPredicate(format: "label CONTAINS 'fantavoto atteso'")).firstMatch
         XCTAssertTrue(riga.waitForExistence(timeout: 30), "serve almeno una riga di giocatore in Oggi")
         riga.tap()
         attendi("Prossima partita")
