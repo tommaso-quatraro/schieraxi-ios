@@ -135,16 +135,31 @@ final class ServerHTTPAccountTests: XCTestCase {
     }
 
     func test401DiUnAccessoSbagliatoNonAvvisaLApp() async throws {
-        ProtocolloFinto.gestore = { [unowned self] r in (risposta(r, 401), Data("{\"detail\": \"Nome utente o password non corretti\"}".utf8)) }
-        let nessunAvviso = expectation(forNotification: .accessoRichiesto, object: nil)
-        nessunAvviso.isInverted = true
+        // Il finto internet è uno solo e condiviso: il 401 lo diamo SOLO alla richiesta di accesso.
+        ProtocolloFinto.gestore = { [unowned self] r in
+            r.url?.path == "/api/account/accedi"
+                ? (risposta(r, 401), Data("{\"detail\": \"Nome utente o password non corretti\"}".utf8))
+                : (risposta(r, 200), Data("{}".utf8))
+        }
+        // Indirizzo solo di questo test: l'avviso di una richiesta rimasta in giro da un altro test (che usa l'indirizzo
+        // comune della classe) non può essere scambiato per uno nostro.
+        let mio = "https://prova-\(UUID().uuidString.lowercased()).invalid"
+        UserDefaults.standard.set(mio, forKey: "indirizzo")
+        let visti = Scatola<[String]>()
+        visti.valore = []
+        let osservatore = NotificationCenter.default.addObserver(forName: .accessoRichiesto, object: nil, queue: .main) { n in
+            visti.valore = (visti.valore ?? []) + ["\(n.userInfo ?? [:])"]
+        }
+        defer { NotificationCenter.default.removeObserver(osservatore) }
         do {
             _ = try await server.corpoJSON("POST", "/api/account/accedi", ["nome_utente": "x"])
             XCTFail("doveva lanciare")
         } catch ErroreApi.accessoRichiesto(let messaggio) {
             XCTAssertEqual(messaggio, "Nome utente o password non corretti")
         }
-        await fulfillment(of: [nessunAvviso], timeout: 0.4)
+        try await Task.sleep(nanoseconds: 400_000_000)
+        let miei = (visti.valore ?? []).filter { $0.contains(mio) && $0.contains("/api/account/accedi") }
+        XCTAssertTrue(miei.isEmpty, "avvisi arrivati: \(miei) (tutti: \(visti.valore ?? []))")
     }
 
     func test429ConAttesa() async throws {

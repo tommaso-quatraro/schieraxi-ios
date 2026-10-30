@@ -29,8 +29,12 @@ final class FormatoTests: XCTestCase {
     }
 
     func testInteroNonVaMaiInCrash() {
-        XCTAssertEqual(Formato.intero(3.9), 3)
-        XCTAssertEqual(Formato.intero(-2.5), -2)
+        XCTAssertEqual(Formato.intero(3.9), 4, "si arrotonda come la web, non si tronca")
+        XCTAssertEqual(Formato.intero(155.9), 156)
+        XCTAssertEqual(Formato.intero(4.5), 5)
+        XCTAssertEqual(Formato.intero(3.4), 3)
+        XCTAssertEqual(Formato.intero(-2.5), -2, "come Math.round")
+        XCTAssertEqual(Formato.intero(-4.6), -5)
         XCTAssertEqual(Formato.intero(nil), 0)
         XCTAssertEqual(Formato.intero(.nan), 0)
         XCTAssertEqual(Formato.intero(.infinity), 0)

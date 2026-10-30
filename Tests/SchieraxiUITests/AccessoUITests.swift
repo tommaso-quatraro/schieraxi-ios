@@ -83,6 +83,52 @@ final class AccessoUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Esci"].exists)
     }
 
+    func testRetAssenteDiceCosaFare() {
+        avvia("rete")
+        attendi("Non riesco a raggiungere il server", contiene: true)
+        XCTAssertTrue(app.buttons["Entra"].waitForExistence(timeout: 10), "si può riprovare")
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
+    }
+
+    func testTroppiTentativiMostraIlContoAllaRovescia() {
+        avvia("limite")
+        attendi("Troppi tentativi", contiene: true)
+        let conto = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Riprova tra'")).firstMatch
+        XCTAssertTrue(conto.waitForExistence(timeout: 10))
+        XCTAssertFalse(conto.isEnabled, "durante l'attesa non si riprova")
+    }
+
+    func testServerCheNonESchieraxi() {
+        avvia("non-valido")
+        attendi("non sembra un server di SchieraXI", contiene: true)
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
+    }
+
+    func testCambioRapidoTraLeSchedeNonRompeNiente() {
+        avvia("accedi")
+        XCTAssertTrue(app.textFields["Nome utente"].waitForExistence(timeout: 30))
+        for _ in 0..<6 {
+            app.buttons["Registrati"].tap()
+            app.buttons["Recupera"].tap()
+            app.buttons["Accedi"].tap()
+        }
+        XCTAssertTrue(app.buttons["Entra"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.secureTextFields["Password"].waitForExistence(timeout: 10))
+    }
+
+    func testInSecondoPianoLaPasswordScrittaSiCancella() {
+        avvia("accedi")
+        let password = app.secureTextFields["Password"]
+        XCTAssertTrue(password.waitForExistence(timeout: 30))
+        password.tap()
+        password.typeText("Tre-Quarti-Dieci")
+        XCUIDevice.shared.press(.home)
+        sleep(2)
+        app.activate()
+        XCTAssertTrue(password.waitForExistence(timeout: 10))
+        XCTAssertFalse((password.value as? String ?? "").contains("•"), "tornando nell'app la password non c'è più")
+    }
+
     func testLegaSenzaRoseSpiegaCosaFare() {
         avvia("rose")
         attendi("Manca la tua squadra")

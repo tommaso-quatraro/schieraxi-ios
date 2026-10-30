@@ -314,3 +314,16 @@ final class DominioTests: XCTestCase {
         XCTAssertEqual(Set(giorni.map(\.titolo)).count, giorni.count, "ogni giorno compare una volta sola")
     }
 }
+
+final class AvatarTests: XCTestCase {
+    func testInizialiDelCognome() {
+        XCTAssertEqual(AvatarGiocatore.iniziali("Giocatore 045"), "MA")
+        XCTAssertEqual(AvatarGiocatore.iniziali("Giovanni Di Lorenzo"), "DI")
+        XCTAssertEqual(AvatarGiocatore.iniziali("Pedro"), "PE")
+        XCTAssertEqual(AvatarGiocatore.iniziali("Giocatore 033 Çalhanoğlu"), "ÇA")
+        XCTAssertEqual(AvatarGiocatore.iniziali("N'Dicka"), "ND")
+        XCTAssertNil(AvatarGiocatore.iniziali(nil))
+        XCTAssertNil(AvatarGiocatore.iniziali("   "))
+        XCTAssertNil(AvatarGiocatore.iniziali("12 34"), "senza lettere niente iniziali")
+    }
+}

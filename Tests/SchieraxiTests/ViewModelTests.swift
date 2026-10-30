@@ -236,7 +236,7 @@ final class ScambiViewModelTests: XCTestCase {
         let vm = ScambiViewModel(server: ServerDiProva.conFixture([:]))
         XCTAssertEqual(vm.indirizzoProposte, "/api/scambi/proposte?due=false")
         vm.due = true
-        XCTAssertEqual(vm.indirizzoProposte, "/api/scambi/proposte?due=true")
+        XCTAssertEqual(vm.indirizzoProposte, "/api/scambi/proposte?due=false", "il 2 contro 2 si chiede solo con una squadra scelta")
         vm.con = "Gli Amici & C."
         XCTAssertEqual(vm.indirizzoProposte, "/api/scambi/proposte?due=true&con=Gli%20Amici%20%26%20C.")
         vm.con = "Tutte"

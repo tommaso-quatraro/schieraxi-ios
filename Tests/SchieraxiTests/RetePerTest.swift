@@ -109,7 +109,7 @@ final class ServerHTTPTests: XCTestCase {
             _ = try await server.grezzo("/api/x")
             XCTFail("doveva lanciare un errore")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "Il server dice: errore 500")
+            XCTAssertEqual(error.localizedDescription, "Il server ha risposto con un errore (500).", "una pagina HTML non è un messaggio del server")
         }
     }
 

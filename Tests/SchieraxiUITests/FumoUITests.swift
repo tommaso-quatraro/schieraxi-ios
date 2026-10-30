@@ -81,6 +81,7 @@ final class FumoUITests: XCTestCase {
 
     func testScambiConOffertaEAnalisi() {
         vaiA("Scambi")
+        XCTAssertTrue(app.buttons["Cerca scambi"].waitForExistence(timeout: 20), "le proposte si cercano con il pulsante")
         attendi("Ho ricevuto un'offerta")
         attendi("Chi accetta più volentieri")
         attendi("Analizza uno scambio a mano")
