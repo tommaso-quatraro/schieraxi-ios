@@ -30,15 +30,12 @@ jobs:
       - name: Crea il progetto Xcode
         run: xcodegen generate
       - name: Compila per il simulatore (senza firma)
-        env:
-          FANTA_HOST: ${{ secrets.FANTA_HOST }}
-          FANTA_PORT: ${{ secrets.FANTA_PORT }}
         run: |
           set -o pipefail
           xcodebuild -project Schieraxi.xcodeproj -scheme Schieraxi -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
             build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 \
-            FANTA_HOST="$FANTA_HOST" FANTA_PORT="$FANTA_PORT" 2>&1 | tee build.log | tail -n 40
+            2>&1 | tee build.log | tail -n 40
           test -d build/Build/Products/Debug-iphonesimulator/Schieraxi.app
       - name: Simulatori disponibili
         run: |

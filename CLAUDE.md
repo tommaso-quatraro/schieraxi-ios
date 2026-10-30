@@ -21,7 +21,7 @@ Il server e la logica (modello, formazioni, scambi) stanno nell'altro repository
 - **Il repository è PUBBLICO, di proposito**: così GitHub Actions su macOS compila gratis e SideStore scarica gli aggiornamenti. Deciso il 29/10/2026: i nomi della lega nelle fixture non sono sensibili e restano. Niente password, chiavi, indirizzi o dati personali veri (vedi "Chiavi e segreti").
 
 ## Chiavi e segreti
-**Mai in git**: firme, certificati, profili, password, Apple ID. L'indirizzo del server arriva dalle variabili del repository `FANTA_HOST` e `FANTA_PORT`, non sta nel codice.
+**Mai in git**: firme, certificati, profili, password, Apple ID. L'indirizzo del server NON sta nel repository né nell'IPA (entrambi pubblici): si scrive nell'app al primo avvio (e in Lega > Server) e resta sul telefono. Il widget lo ha nelle sue impostazioni (Modifica widget). Il workflow IPA fallisce se trova `ts.net` o il segreto `FANTA_HOST` dentro l'IPA.
 
 ## Installazione sul telefono
 IPA non firmato dalla release `build-N`; lo firma e lo rinnova SideStore con l'Apple ID gratuito (certificato di 7 giorni, massimo 3 app, LocalDevVPN accesa).

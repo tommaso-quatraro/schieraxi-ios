@@ -140,3 +140,55 @@ final class ProvaConnessioneTests: XCTestCase {
         XCTAssertEqual(tutti.filter(\.raggiunto).count, 2)
     }
 }
+
+/// L'indirizzo del server non sta dentro l'app: si scrive al primo avvio e resta sul telefono.
+final class IndirizzoNonNellApp: XCTestCase {
+    private var prima: String?
+
+    override func setUp() {
+        super.setUp()
+        prima = UserDefaults.standard.string(forKey: "indirizzo")
+    }
+
+    override func tearDown() {
+        if let prima { UserDefaults.standard.set(prima, forKey: "indirizzo") } else { UserDefaults.standard.removeObject(forKey: "indirizzo") }
+        super.tearDown()
+    }
+
+    func testSenzaIndirizzoSalvatoManca() {
+        UserDefaults.standard.removeObject(forKey: "indirizzo")
+        XCTAssertEqual(Config.indirizzoPredefinito, "", "nessun indirizzo predefinito dentro l'app")
+        XCTAssertTrue(IndirizzoServer.manca)
+        XCTAssertEqual(IndirizzoServer.attuale, "")
+        UserDefaults.standard.set("   ", forKey: "indirizzo")
+        XCTAssertTrue(IndirizzoServer.manca)
+        UserDefaults.standard.set("http://non-valido.invalid", forKey: "indirizzo")
+        XCTAssertTrue(IndirizzoServer.manca, "un indirizzo non ammesso vale come mancante")
+    }
+
+    func testUnIndirizzoGiaSalvatoSiMantieneDopoLAggiornamento() {
+        // chi aveva già scritto l'indirizzo (UserDefaults «indirizzo», la stessa chiave di sempre) non deve rifarlo
+        UserDefaults.standard.set("https://gia-salvato.invalid:8443/", forKey: "indirizzo")
+        XCTAssertFalse(IndirizzoServer.manca)
+        XCTAssertEqual(IndirizzoServer.attuale, "https://gia-salvato.invalid:8443")
+    }
+
+    func testSenzaIndirizzoLeRichiesteDannoUnMessaggioChiaro() async {
+        UserDefaults.standard.removeObject(forKey: "indirizzo")
+        do {
+            _ = try await ServerHTTP().grezzo("/api/oggi")
+            XCTFail("doveva lanciare")
+        } catch let e as ErroreApi {
+            guard case .indirizzoNonValido = e else { return XCTFail("errore sbagliato: \(e)") }
+            XCTAssertTrue((e.errorDescription ?? "").contains("Manca l'indirizzo"), e.errorDescription ?? "")
+        } catch {
+            XCTFail("errore sbagliato: \(error)")
+        }
+    }
+
+    func testNelleInfoDellAppNonCeNessunIndirizzo() {
+        for chiave in ["FantaHost", "FantaPort"] {
+            XCTAssertNil(Bundle.main.object(forInfoDictionaryKey: chiave), "\(chiave) non deve stare nell'Info.plist (l'IPA è pubblico)")
+        }
+    }
+}
