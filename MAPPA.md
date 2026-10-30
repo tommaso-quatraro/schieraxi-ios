@@ -25,7 +25,7 @@ Il server e la logica stanno in `schieraxi` (`C:\Users\utente\Progetti\schieraxi
 - I ViewModel ricevono un `ServerClient` nel costruttore (anteprime `FinteServer`, test `ServerDiProva`). Nei test solo indirizzi `example.invalid`, mai quelli veri.
 - Testi in italiano, numeri e date con `Formato` e `Quando`. Accessibilita': VoiceOver con frasi complete, aree di tocco 44 pt, Dynamic Type, "Ridurre movimento".
 - Funzioni di iOS 26 solo tramite `Vetro` e `#available`: il target minimo e' iOS 18.
-- Flusso: issue, ramo, passi piccoli, PR (`Closes #N`), `Test` verde, unione squash (`gh pr merge N --squash --delete-branch`) SOLO con ok dell'utente, poi build IPA e prova sul telefono. Se i controlli non partono (limite account) si aspetta: non si unisce a mano.
+- Flusso: issue, ramo, passi piccoli, PR (`Closes #N`), `Test` verde, unione squash (`gh pr merge N --squash --delete-branch`) appena `Test` e' verde (autonomia data dall'utente; screenshot guardati se la grafica cambia), poi build IPA e prova sul telefono. Se i controlli non partono (limite account) si aspetta: non si unisce a mano.
 - La compilazione verde non prova il comportamento: la lista "Da provare sul telefono" e' nel README. Non dire che una funzione va se non e' provata.
 - Il disco in cartella e' in CRLF per molti file (autocrlf su Windows), nel repository e' LF: non riscrivere interi file solo per i fine riga; controlla `git diff --stat`.
 

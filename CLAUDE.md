@@ -9,7 +9,7 @@ Il server e la logica (modello, formazioni, scambi) stanno nell'altro repository
 - Non c'è un Mac: si scrive qui su Windows e **GitHub Actions compila e prova su un Mac** (`macos-26`). Quello che non si può provare qui si prova lì.
 - Flusso: **issue** → **ramo** → passi piccoli → **pull request** (`Closes #N`) → workflow `Test` verde → unione (squash) → build `Compila IPA` → prova sul telefono.
   Le regole valide per tutti i progetti stanno in `~\.claude\CLAUDE.md`.
-- Unisci la PR solo con i test verdi e dopo il mio ok. Se i controlli non partono (limite dell'account GitHub), dillo: non unire a mano.
+- Unisci la PR da solo quando i controlli sono verdi (guardando gli screenshot se la grafica cambia): l'utente ha dato autonomia, non serve chiedere. Se i controlli non partono (limite dell'account GitHub), dillo e aspetta: non unire a mano. Mai indirizzi, token o email nel repository (e' pubblico).
 - La compilazione verde non prova il comportamento: la lista "Da provare sul telefono" è nel README. Non dire che una funzione va se non è provata.
 
 ## Regole del codice
