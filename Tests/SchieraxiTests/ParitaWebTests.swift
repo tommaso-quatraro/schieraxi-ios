@@ -311,3 +311,33 @@ final class NomeEMovimentoTests: XCTestCase {
         XCTAssertTrue(trovati.isEmpty, "«SchieraXI» va sempre con la U maiuscola: \(trovati)")
     }
 }
+
+/// Diario: «Ho schierato la consigliata» per una giornata finita.
+@MainActor
+final class DiarioSchierataTests: XCTestCase {
+    func testSalvaLaConsigliataERicaricaIlDiario() async throws {
+        let s = ServerDiProva { metodo, percorso, _ in
+            if metodo == "POST", percorso == "/api/diario/schierata" { return Data(#"{"giornata": 9}"#.utf8) }
+            if percorso == "/api/diario" { return Data(#"{"giornate": [{"giornata": 9, "stagione": "2026-27"}], "sintesi": {"giornate": 0}}"#.utf8) }
+            throw ErroreApi.server("niente")
+        }
+        let vm = DiarioViewModel(server: s)
+        await vm.haSchieratoLaConsigliata(giornata: 9)
+        XCTAssertEqual(s.quante("POST /api/diario/schierata"), 1)
+        let corpo = String(decoding: try XCTUnwrap(s.corpiInviati(a: "/api/diario/schierata").first), as: UTF8.self)
+        XCTAssertTrue(corpo.contains("\"consigliata\"") && corpo.contains("9"), corpo)
+        XCTAssertFalse(corpo.contains("titolari"), "senza titolari per «consigliata»")
+        XCTAssertTrue(vm.messaggioRiuscito)
+        XCTAssertNil(vm.inSalvataggio)
+        XCTAssertEqual(s.quante("GET /api/diario"), 1, "dopo il salvataggio il diario si rilegge")
+    }
+
+    func testUnErroreDelServerSiMostraSenzaRompere() async {
+        let s = ServerDiProva { _, _, _ in throw ErroreApi.server("Si può dire cosa hai schierato solo per le giornate già finite") }
+        let vm = DiarioViewModel(server: s)
+        await vm.haSchieratoLaConsigliata(giornata: 99)
+        XCTAssertFalse(vm.messaggioRiuscito)
+        XCTAssertTrue((vm.messaggio ?? "").contains("giornate già finite"))
+        XCTAssertNil(vm.inSalvataggio)
+    }
+}
