@@ -122,6 +122,38 @@ final class ProvaConnessioneTests: XCTestCase {
         XCTAssertEqual(avvisi.valore, 0, "un 401 della prova non manda l'app alla schermata di accesso")
     }
 
+    func testConUnaSessioneValidaLaProvaUsaIlTokenEDiceConnesso() async {
+        let archivio = MemoriaToken()
+        archivio.salva("tok-sessione", server: "https://prova-sessione.invalid")
+        let visto = Scatola<String>()
+        let s = sessione { r in visto.valore = r.value(forHTTPHeaderField: "Authorization") ?? "nessuno"; return (200, self.stato) }
+        let e = await ProvaConnessione.prova("https://prova-sessione.invalid/", sessione: s, archivio: archivio)
+        XCTAssertEqual(visto.valore, "Bearer tok-sessione")
+        XCTAssertEqual(e, .raggiunto(versione: "1.41", squadra: "Schiera FC"), "poi la vista lo mostra come «Connesso come …»")
+        XCTAssertEqual(EsitoConnessione.connesso(utente: "utente").titolo, "Connesso come utente")
+        XCTAssertTrue(EsitoConnessione.connesso(utente: "t").raggiunto)
+    }
+
+    func testConUnTokenScadutoIl401DiceSessioneScaduta() async {
+        let archivio = MemoriaToken()
+        archivio.salva("vecchio", server: "https://prova-sessione.invalid")
+        let s = sessione { _ in (401, Data(#"{"detail": "Accesso richiesto"}"#.utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-sessione.invalid", sessione: s, archivio: archivio)
+        XCTAssertEqual(e, .sessioneScaduta)
+        XCTAssertTrue(e.raggiunto)
+        XCTAssertFalse(e.dettaglio.contains("schermata di accesso"), "non si dice di accedere dalla schermata di accesso a chi ha una sessione")
+    }
+
+    func testIlTokenDiUnAltroIndirizzoNonViaggia() async {
+        let archivio = MemoriaToken()
+        archivio.salva("tok", server: "https://un-altro.invalid")
+        let visto = Scatola<String>()
+        let s = sessione { r in visto.valore = r.value(forHTTPHeaderField: "Authorization") ?? "nessuno"; return (401, Data(#"{"detail": "x"}"#.utf8)) }
+        let e = await ProvaConnessione.prova("https://prova-nuovo.invalid", sessione: s, archivio: archivio)
+        XCTAssertEqual(visto.valore, "nessuno")
+        XCTAssertEqual(e, .chiedeAccesso)
+    }
+
     func testPulisciGliIndirizzi() {
         XCTAssertEqual(ProvaConnessione.pulisci("  https://server.example.invalid:8443/ "), "https://server.example.invalid:8443")
         XCTAssertEqual(ProvaConnessione.pulisci("https://server.example.invalid///"), "https://server.example.invalid")
