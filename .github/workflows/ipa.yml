@@ -12,9 +12,24 @@ on:
         default: macos-26
   push:
     branches: [main]
+    # solo se cambia qualcosa che finisce nell'IPA o nella sua compilazione (i documenti e i test non servono)
+    paths:
+      - "Sources/**"
+      - "WidgetSources/**"
+      - "Config/**"
+      - "project.yml"
+      - "scripts/genera_sorgente.py"
+      - "scripts/maschera_log.py"
+      - ".github/workflows/ipa.yml"
 
 permissions:
   contents: write
+
+# Una build alla volta; in coda resta solo l'ultima richiesta (le altre si annullano da sole).
+# Su main la build in corso NON si annulla mai: può essere quella che crea la release (build-N).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   ipa:

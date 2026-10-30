@@ -5,9 +5,9 @@ Il server e la logica stanno in `schieraxi` (`C:\Users\utente\Progetti\schieraxi
 
 ## Comandi
 - NON c'e' un Mac: non si compila ne' si prova in locale. Tutto gira su GitHub Actions (`macos-26`, Xcode 26).
-- Test = workflow `Test` (`.github/workflows/test.yml`): a ogni push e PR, `xcodegen generate` + `xcodebuild test -scheme Schieraxi` su un simulatore scelto da `scripts/scegli_simulatore.py`. Attesa: `gh pr checks N --watch --interval 30`. Se rosso: `gh run view --log-failed` (restano anche gli artifact `risultati-test`, 7 giorni).
-- IPA = workflow `Compila IPA` (`ipa.yml`): parte a ogni push su `main` (e a mano), crea la release `build-N` con `Schieraxi.ipa` e `sorgente.json` (`scripts/genera_sorgente.py`). Fonte per SideStore: `.../releases/latest/download/sorgente.json`.
-- Foto delle schermate: workflow `screenshot.yml` (a mano o a ogni push su main che cambia `Sources/`); scaricare con `gh run download <id> --name screenshot-app --dir .screenshot` (cartella ignorata da git).
+- Test = workflow `Test` (`.github/workflows/test.yml`): su ogni PR e su push a main (non sui rami), `xcodegen generate` + `xcodebuild test -scheme Schieraxi` su un simulatore scelto da `scripts/scegli_simulatore.py`. Attesa: `gh pr checks N --watch --interval 30`. Se rosso: `gh run view --log-failed` (restano anche gli artifact `risultati-test`, 7 giorni).
+- IPA = workflow `Compila IPA` (`ipa.yml`): parte a ogni push su `main` che cambia `Sources/`, `WidgetSources/`, `Config/`, `project.yml` o gli script dell'IPA (e a mano), crea la release `build-N` con `Schieraxi.ipa` e `sorgente.json` (`scripts/genera_sorgente.py`). Fonte per SideStore: `.../releases/latest/download/sorgente.json`.
+- Foto delle schermate: workflow `screenshot.yml` (app e widget in un job; a mano, o con l'etichetta `screenshot` sulla PR, o se la PR cambia schermate/widget; vedi README «CI»); scaricare con `gh run download <id> --name screenshot-app --dir .screenshot` (cartella ignorata da git).
 - Attenzione ai costi: macOS e' il runner piu' caro. Il repository e' pubblico di proposito proprio perche' cosi' le Actions su macOS sono gratis (e SideStore scarica gli aggiornamenti). Non renderlo privato. Evita push inutili (un push = una corsa di test + una di screenshot/IPA su main); fai piu' modifiche per push e usa le PR.
 - Il progetto Xcode non e' in git: lo genera XcodeGen da `project.yml`. Modifica `project.yml`, mai un `.xcodeproj`.
 
@@ -51,4 +51,4 @@ Il server e la logica stanno in `schieraxi` (`C:\Users\utente\Progetti\schieraxi
 - App Group (indirizzo, token e ultimo riassunto condivisi col widget): `Sources/Support/Condiviso.swift`. Con l'Apple ID gratuito funziona se i permessi sono dentro l'IPA (ldid in `ipa.yml`) e SideStore scrive il nome vero in Info.plist `ALTAppGroups`: l'app lo legge a runtime. NON provato su un telefono vero: se il widget chiede ancora l'accesso o l'indirizzo, il gruppo non e' stato registrato (ripiego: indirizzo nelle impostazioni del widget).
 - Se SideStore protesta per i limiti, si toglie il target `SchieraxiWidget` e la riga `dependencies` da `project.yml`.
 - Modalita' demo: argomento di lancio `-DEMO` (+ `-DEMO_SCHERMATA`, `-DEMO_FONDO`, `-DEMO_ORIENTAMENTO`, `-DEMO_CERCA`); in demo l'indirizzo vero non compare e il Keychain non si usa. I test UI e gli screenshot dipendono da questo: non romperlo.
-- Concorrenza dei workflow: `test.yml` annulla le corse vecchie dello stesso ramo; `ipa.yml` ha bisogno di `contents: write` per la release.
+- Concorrenza dei workflow: ogni workflow ha il gruppo `workflow + ramo` e annulla la corsa vecchia; su `main` `ipa.yml` NON annulla la build in corso (può essere la release). `ipa.yml` ha bisogno di `contents: write` per la release.

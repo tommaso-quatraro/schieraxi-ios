@@ -107,10 +107,20 @@ final class AccessoUITests: XCTestCase {
     func testCambioRapidoTraLeSchedeNonRompeNiente() {
         avvia("accedi")
         XCTAssertTrue(app.textFields["Nome utente"].waitForExistence(timeout: 30))
-        for _ in 0..<6 {
-            app.buttons["Registrati"].tap()
-            app.buttons["Recupera"].tap()
-            app.buttons["Accedi"].tap()
+        // Ogni cambio aspetta che compaia il pulsante della scheda d'arrivo prima del successivo: niente attese fisse.
+        // Il pulsante si cerca ogni volta, così un tocco su una schermata che si sta ancora montando non resta appeso.
+        let arrivi: [(tocco: String, atteso: String)] = [
+            ("Registrati", "Crea l'account"),
+            ("Recupera", "Cambia la password"),
+            ("Accedi", "Entra"),
+        ]
+        for giro in 1...6 {
+            for passo in arrivi {
+                let pulsante = app.buttons[passo.tocco]
+                XCTAssertTrue(pulsante.waitForExistence(timeout: 10), "giro \(giro): manca il pulsante «\(passo.tocco)»")
+                pulsante.tap()
+                XCTAssertTrue(app.buttons[passo.atteso].waitForExistence(timeout: 10), "giro \(giro): dopo «\(passo.tocco)» non compare «\(passo.atteso)»")
+            }
         }
         // Con i tocchi a raffica sul Mac di GitHub un tocco può perdersi: si rimette «Accedi» finché il pulsante «Entra» compare.
         var tornata = false

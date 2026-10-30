@@ -1,74 +1,82 @@
 name: Test
 
-# Esegue i test automatici nel simulatore di un Mac di GitHub: unitari (SchieraxiTests: Domain, Data, ViewModel) e di interfaccia
-# (SchieraxiUITests: l'app in modalità -DEMO, senza rete). Parte a ogni push e a ogni pull request.
-# Se un test fallisce il lavoro diventa rosso e i risultati (.xcresult e log) restano come artifact per 7 giorni.
+# Esegue i test automatici nel simulatore di un Mac di GitHub: unitari (SchieraxiTests) e di interfaccia (SchieraxiUITests,
+# con -DEMO, senza rete). Parte su ogni pull request e su ogni push a main. Non parte sui rami di lavoro: la PR li copre già.
+# Se un test fallisce il lavoro diventa rosso e il log mascherato resta come artifact per 7 giorni.
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
+# Un solo test per ramo o PR alla volta: un nuovo push annulla quello in corso.
 concurrency:
-  group: test-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Installa XcodeGen
-        run: brew install xcodegen
+      - name: Installa XcodeGen (se manca)
+        run: command -v xcodegen > /dev/null || brew install xcodegen
       - name: Crea il progetto Xcode
         run: xcodegen generate
+      - name: Cache di DerivedData (la compilazione precedente)
+        uses: actions/cache@v4
+        with:
+          path: build/DerivedData
+          key: dd-${{ runner.os }}-${{ hashFiles('project.yml', 'Sources/**', 'Tests/**', 'WidgetSources/**', 'AnteprimaWidget/**') }}
+          restore-keys: |
+            dd-${{ runner.os }}-
       - name: Scegli il simulatore
         id: sim
         run: |
           xcodebuild -version
-          # quali Xcode e quali SDK di iOS ci sono sul Mac di GitHub (per usare il piu' recente supportato)
-          ls -d /Applications/Xcode* 2>/dev/null || true
-          xcodebuild -showsdks | grep -i "iOS" || true
           IFS=$'\t' read -r UDID NOME IOS <<< "$(python3 -I scripts/scegli_simulatore.py iphone)"
-          echo "Simulatore: $NOME ($IOS) $UDID"
+          echo "Simulatore: $NOME ($IOS)"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
-          echo "nome=$NOME" >> "$GITHUB_OUTPUT"
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b > /dev/null
-      - name: Compila ed esegui i test
+      - name: Compila i test (build-for-testing)
         run: |
           set -o pipefail
           mkdir -p build
+          xcodebuild build-for-testing -project Schieraxi.xcodeproj -scheme Schieraxi \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
+            2>&1 | tee build/build.log | tail -n 40
+      - name: Esegui i test (test-without-building)
+        run: |
+          set -o pipefail
           rm -rf build/test.xcresult
-          xcodebuild test -project Schieraxi.xcodeproj -scheme Schieraxi \
-            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+          xcodebuild test-without-building -project Schieraxi.xcodeproj -scheme Schieraxi \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" -derivedDataPath build/DerivedData \
             -resultBundlePath build/test.xcresult \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
             2>&1 | tee build/test.log | tail -n 60
-      - name: Riepilogo dei test (numeri)
+      - name: Riepilogo dei test
         if: always()
         run: |
-          echo "Test eseguiti con esito positivo (righe «passed» del log):"
-          grep -cE "^Test Case .* passed" build/test.log || true
-          echo "Test falliti:"
-          grep -cE "^Test Case .* failed" build/test.log || true
+          echo "Test riusciti: $(grep -cE '^Test Case .* passed' build/test.log || true)"
+          echo "Test falliti: $(grep -cE '^Test Case .* failed' build/test.log || true)"
           xcrun xcresulttool get test-results summary --path build/test.xcresult --compact 2>/dev/null || true
-      - name: Avvisi di deprecazione
-        if: always()
-        run: |
           echo "Avvisi di deprecazione (SDK recente):"
-          grep -E "warning:.*(deprecated|was deprecated)" build/test.log | sed -E 's#/Users/runner/work/[^/]+/[^/]+/##' | sort -u | head -n 40 || true
-      - name: Riepilogo (righe con errori)
+          grep -hE "warning:.*(deprecated|was deprecated)" build/build.log build/test.log 2>/dev/null | sed -E 's#/Users/runner/work/[^/]+/[^/]+/##' | sort -u | head -n 40 || true
+      - name: Righe con errori
         if: failure()
         run: |
-          grep -E "error:|Test Case .* failed|\*\* TEST FAILED|failed:" build/test.log | head -n 80 || true
+          grep -hE "error:|Test Case .* failed|\*\* TEST FAILED|\*\* BUILD FAILED|failed:" build/build.log build/test.log 2>/dev/null | head -n 80 || true
       - name: Maschera il log (il repository è pubblico)
         if: failure()
         run: |
           # Nel log di compilazione c'è la riga di comando con l'indirizzo vero: si toglie prima di caricarlo.
-          python3 -I scripts/maschera_log.py build/test.log build/test-mascherato.log
+          cat build/build.log build/test.log > build/tutto.log 2>/dev/null || true
+          python3 -I scripts/maschera_log.py build/tutto.log build/test-mascherato.log
       - name: Carica il log mascherato se qualcosa è andato storto
         if: failure()
         uses: actions/upload-artifact@v4
