@@ -61,10 +61,14 @@ final class AccessoUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Copia"].exists)
         let conferma = app.switches.firstMatch
         XCTAssertTrue(conferma.waitForExistence(timeout: 10))
-        conferma.tap()
-        // lo stato di SwiftUI si aggiorna un attimo dopo il tocco: si aspetta che il pulsante si accenda
-        let acceso = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: continua)
-        wait(for: [acceso], timeout: 15)
+        // Il tocco sull'interruttore a volte non arriva al primo colpo nel simulatore: si tocca la levetta (a destra) e si
+        // riprova finché il pulsante si accende (al massimo tre volte, sempre con attesa).
+        var acceso = false
+        for _ in 0..<3 where !acceso {
+            if (conferma.value as? String) != "1" { conferma.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap() }
+            acceso = XCTWaiter().wait(for: [expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: continua)], timeout: 5) == .completed
+        }
+        XCTAssertTrue(acceso, "dopo la conferma il pulsante Continua si accende")
         continua.tap()
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
     }

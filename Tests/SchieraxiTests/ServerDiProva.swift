@@ -45,9 +45,23 @@ final class ServerDiProva: ServerClient, @unchecked Sendable {
         return try await gestore(metodo, percorso, corpo)
     }
 
-    func carica(_ percorso: String, nome: String, dati: Data) async throws -> Data {
+    func carica(_ percorso: String, nome: String, dati: Data, tipo: String) async throws -> Data {
         annota("UPLOAD \(percorso)", dati)
+        annotaFile(nome: nome, tipo: tipo)
         return try await gestore("UPLOAD", percorso, dati)
+    }
+
+    /// Nome e tipo dei file caricati, nell'ordine.
+    var fileCaricati: [(nome: String, tipo: String)] {
+        blocco.lock(); defer { blocco.unlock() }
+        return files
+    }
+
+    private var files: [(nome: String, tipo: String)] = []
+
+    private func annotaFile(nome: String, tipo: String) {
+        blocco.lock(); defer { blocco.unlock() }
+        files.append((nome, tipo))
     }
 
     // MARK: costruzione rapida

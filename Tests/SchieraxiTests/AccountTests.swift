@@ -131,7 +131,7 @@ final class ServerHTTPAccountTests: XCTestCase {
         } catch ErroreApi.accessoRichiesto(let messaggio) {
             XCTAssertEqual(messaggio, "Accesso richiesto")
         }
-        await fulfillment(of: [avviso], timeout: 2)
+        await fulfillment(of: [avviso], timeout: 10)   // la notifica passa dalla coda principale: sul Mac di GitHub carico serve margine
     }
 
     func test401DiUnAccessoSbagliatoNonAvvisaLApp() async throws {
