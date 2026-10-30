@@ -340,3 +340,53 @@ final class NomiDatiTests: XCTestCase {
         XCTAssertEqual(NomiDati.leggibile(""), "")
     }
 }
+
+/// «Da fare» in Oggi (campo `da_fare` di /api/oggi) e i giorni del certificato.
+final class DaFareTests: XCTestCase {
+    private func oggi(_ daFare: String) throws -> Oggi {
+        try Decodifica.decodifica(Data(#"{"giornata": 11, "inizio": "2026-10-31 18:30", "da_fare": \#(daFare)}"#.utf8))
+    }
+
+    func testSiLeggeIlContratto() throws {
+        let o = try oggi(#"""
+        [{"id": "dubbio-5", "tipo": "dubbio", "testo": "Giocatore 044 e' in dubbio", "priorita": 1, "azione": "Sostituisci",
+          "destinazione": {"scheda": "formazione", "sezione": "formazione", "link": "schieraxi://formazione"}, "giocatore": {"id": 5}},
+         {"id": 7, "tipo": "rose", "testo": "Aggiorna le rose", "priorita": 2, "azione": "Aggiorna", "destinazione": {"sezione": "lega"}}]
+        """#)
+        let c = o.cosePerOrdine
+        XCTAssertEqual(c.count, 2)
+        XCTAssertEqual(c[0].id, "dubbio-5")
+        XCTAssertEqual(c[1].id, "7", "un id numerico si legge come testo")
+        XCTAssertEqual(c[0].destinazione?.destinazione, .sezione(.formazione))
+        XCTAssertEqual(c[1].destinazione?.destinazione, .sezione(.lega), "senza link vale la sezione")
+    }
+
+    func testOrdineDiUrgenzaEVociVuote() throws {
+        let o = try oggi(#"[{"id": "b", "testo": "B", "priorita": 3}, {"id": "a", "testo": "A", "priorita": 1}, {"id": "c", "testo": "C"}, {"id": "v", "testo": ""}, {"id": "a2", "testo": "A2", "priorita": 1}]"#)
+        XCTAssertEqual(o.cosePerOrdine.map(\.id), ["a", "a2", "b", "c"], "per urgenza, a parità l'ordine del server; niente voci senza testo")
+    }
+
+    func testUnLinkStranoNonPortaDaNessunaParte() throws {
+        let o = try oggi(#"[{"id": "x", "testo": "X", "destinazione": {"link": "https://esempio.invalid", "sezione": "boh"}}]"#)
+        XCTAssertNil(o.cosePerOrdine.first?.destinazione?.destinazione)
+    }
+
+    func testSenzaIlCampoEUnServerVecchio() throws {
+        let o: Oggi = try Decodifica.decodifica(Data(#"{"giornata": 1}"#.utf8))
+        XCTAssertTrue(o.cosePerOrdine.isEmpty)
+    }
+
+    func testIGiorniDelCertificato() {
+        let adesso = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertEqual(Certificato.giorniMancanti(scadenza: adesso.addingTimeInterval(2.5 * 86400), adesso: adesso), 2)
+        XCTAssertEqual(Certificato.giorniMancanti(scadenza: adesso.addingTimeInterval(-3600), adesso: adesso), -1, "scaduto da poco: -1")
+        XCTAssertEqual(Certificato.giorniMancanti(scadenza: adesso.addingTimeInterval(-3 * 86400), adesso: adesso), -3)
+        XCTAssertNil(Certificato.giorniMancanti(scadenza: nil, adesso: adesso))
+    }
+
+    func testLIndirizzoDiOggiConIGiorni() {
+        XCTAssertEqual(OggiRepository.percorso(giorniCertificato: nil), "/api/oggi")
+        XCTAssertEqual(OggiRepository.percorso(giorniCertificato: 6), "/api/oggi?certificato_giorni=6")
+        XCTAssertEqual(OggiRepository.percorso(giorniCertificato: -2), "/api/oggi?certificato_giorni=-2")
+    }
+}
