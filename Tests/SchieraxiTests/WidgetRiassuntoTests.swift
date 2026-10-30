@@ -99,6 +99,80 @@ final class WidgetRiassuntoTests: XCTestCase {
         XCTAssertEqual(r.probabili, true)
     }
 
+    func testIlMiglioreScambioSiLegge() throws {
+        let s = try XCTUnwrap(try riassunto().scambio)
+        XCTAssertEqual(s.altra, "Real Madrink")
+        XCTAssertEqual(s.daiTesto, "A")
+        XCTAssertEqual(s.ricevoTesto, "B")
+        XCTAssertEqual(s.guadagnoLoro, 1.1)
+        XCTAssertTrue(s.frase.contains("Real Madrink"))
+    }
+
+    func testUnoScambioStranoNonRompeIlResto() throws {
+        // «do» e' un numero invece di un elenco: lo scambio si ignora, il resto del riassunto resta.
+        let strano = #"{"giornata": 4, "formazione": {"modulo": "4-3-3"}, "scambio": {"altra": "X", "do": 5}, "svincolato": "no"}"#
+        let w = try XCTUnwrap(RiassuntoWidget.leggi(Data(strano.utf8)))
+        XCTAssertEqual(w.giornata, 4)
+        XCTAssertEqual(w.formazione?.modulo, "4-3-3")
+        XCTAssertNil(w.scambio)
+        XCTAssertNil(w.svincolato)
+    }
+
+    func testLeGiornateGiocateDalDiario() throws {
+        let w = try riassunto()
+        XCTAssertEqual(w.giornateGiocate.map(\.giornata), [10, 9], "dalla piu' recente")
+        XCTAssertEqual(try XCTUnwrap(w.giornateGiocate.first).scarto, -2.5)
+        XCTAssertEqual(try XCTUnwrap(w.giornateGiocate.first).descrizione, "Giornata 10: 63,5 punti fatti, 66,0 attesi")
+    }
+
+    func testLePartiteLiveEIMieiTitolari() throws {
+        let corpo = #"""
+        {"giornata": 11, "formazione": {"modulo": "3-4-3", "titolari": [{"id": 5, "nome": "Giocatore 044", "ruolo": "A"}]},
+         "rosa": [{"id": 5, "nome": "Giocatore 044", "ruolo": "A", "avversario": "roma", "in_casa": true, "titolare": true},
+                  {"id": 6, "nome": "Altro", "ruolo": "D", "avversario": "milan", "in_casa": false, "titolare": false}],
+         "live": {"aggiornato_il": "2026-10-31 15:20:04", "fonte": "espn", "in_corso": 1, "partite": [
+           {"casa": "lazio", "trasferta": "juve", "data": "2026-10-31 20:45", "stato": "da_giocare", "gol_casa": null, "gol_trasferta": null, "eventi": []},
+           {"casa": "inter", "trasferta": "roma", "data": "2026-10-31 15:00", "stato": "secondo_tempo", "minuto": "63'", "gol_casa": 2, "gol_trasferta": 0,
+            "eventi": [{"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "M. Thuram"}]},
+           {"casa": "napoli", "trasferta": "genoa", "data": "2026-10-31 12:30", "stato": "finita", "gol_casa": 1, "gol_trasferta": 1},
+           {"casa": "x", "trasferta": "y", "data": "2026-10-31 15:30", "stato": "stato_nuovo", "gol_casa": 0, "gol_trasferta": 0}]}}
+        """#
+        let w = try XCTUnwrap(RiassuntoWidget.leggi(Data(corpo.utf8)))
+        XCTAssertEqual(w.live?.inCorso, 1)
+        XCTAssertEqual(w.partiteLive.first?.casa, "inter", "prima quelle in gioco")
+        XCTAssertEqual(w.partiteLive.last?.casa, "napoli", "per ultime le finite")
+        XCTAssertEqual(w.partiteInGioco.count, 2, "uno stato sconosciuto con un punteggio conta come in corso")
+        let inter = try XCTUnwrap(w.partiteLive.first { $0.casa == "inter" })
+        XCTAssertEqual(inter.punteggio, "2–0")
+        XCTAssertEqual(inter.etichetta, "63'")
+        XCTAssertEqual(w.partiteLive.first { $0.casa == "lazio" }?.etichetta, "20:45")
+        XCTAssertEqual(w.partiteLive.first { $0.casa == "napoli" }?.etichetta, "Finita")
+        XCTAssertEqual(w.mieiTitolari(in: inter).map(\.id), [5], "Giocatore 044 gioca in casa contro la Roma")
+        XCTAssertTrue(w.mieiTitolari(in: try XCTUnwrap(w.partiteLive.first { $0.casa == "lazio" })).isEmpty)
+        let prima = try XCTUnwrap(Quando.data("2026-10-31 14:00"))
+        XCTAssertTrue(w.finestraLive(adesso: prima), "c'e' una partita in gioco")
+        XCTAssertEqual(w.prossimaPartita(dopo: prima)?.casa, "lazio")
+    }
+
+    func testLIntervalloDeiPuntiAttesi() throws {
+        let c = #"{"giornata": 3, "formazione": {"modulo": "4-3-3", "punti_attesi": 70, "intervallo": {"basso": 62.2, "alto": 84.6, "confidenza": 0.8, "indicativo": true}}}"#
+        let i = try XCTUnwrap(try XCTUnwrap(RiassuntoWidget.leggi(Data(c.utf8))).formazione?.intervallo)
+        XCTAssertEqual(i.testo, "tra 62 e 85")
+        XCTAssertEqual(i.testoLungo, "tra 62 e 85 (8 volte su 10), indicativo")
+        XCTAssertNil(IntervalloWidget(basso: 60).testo, "senza l'estremo alto niente testo")
+        let senza = try XCTUnwrap(RiassuntoWidget.leggi(Data(#"{"giornata": 3, "formazione": {"modulo": "4-3-3"}}"#.utf8)))
+        XCTAssertNil(senza.formazione?.intervallo, "un server vecchio non lo manda")
+    }
+
+    func testIlLiveMancanteOStranoNonRompe() throws {
+        let senza = try XCTUnwrap(RiassuntoWidget.leggi(Data(#"{"giornata": 3}"#.utf8)))
+        XCTAssertNil(senza.live)
+        XCTAssertTrue(senza.partiteLive.isEmpty)
+        XCTAssertFalse(senza.finestraLive())
+        let strano = try XCTUnwrap(RiassuntoWidget.leggi(Data(#"{"giornata": 3, "live": {"partite": "no"}}"#.utf8)))
+        XCTAssertNil(strano.live)
+    }
+
     func testIlCognome() {
         XCTAssertEqual(GiocatoreWidget(id: 1, nome: "Giocatore 002").cognome, "Giocatore 004")
         XCTAssertEqual(GiocatoreWidget(id: 1, nome: "Pedro").cognome, "Pedro")

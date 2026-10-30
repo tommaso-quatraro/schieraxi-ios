@@ -1,0 +1,61 @@
+name: Screenshot dei widget
+
+# Compila l'app di anteprima dei widget (target AnteprimaWidget: dati finti, nessuna rete, non entra nell'IPA) per il SIMULATORE e fotografa
+# ogni widget in tutte le sue misure su iPhone e iPad, chiaro e scuro. Le foto stanno nell'artifact "screenshot-widget" (14 giorni).
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "WidgetSources/**"
+      - "AnteprimaWidget/**"
+      - "scripts/screenshot_widget.sh"
+      - ".github/workflows/screenshot-widget.yml"
+  push:
+    branches: [main]
+    paths:
+      - "WidgetSources/**"
+      - "AnteprimaWidget/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screenshot-widget-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshot:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installa XcodeGen
+        run: brew install xcodegen
+      - name: Crea il progetto Xcode
+        run: xcodegen generate
+      - name: Compila per il simulatore (senza firma)
+        run: |
+          set +e
+          xcodebuild -project Schieraxi.xcodeproj -scheme AnteprimaWidget -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
+            build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 \
+            > build.log 2>&1 || { grep -E "error:" build.log | sort -u | head -30; exit 1; }
+          test -d build/Build/Products/Debug-iphonesimulator/AnteprimaWidget.app
+      - name: Scatta le fotografie
+        run: bash scripts/screenshot_widget.sh build/Build/Products/Debug-iphonesimulator/AnteprimaWidget.app screenshot-widget
+      - name: Carica le fotografie
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-widget
+          path: screenshot-widget/*.png
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Carica il log se qualcosa non va
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-screenshot-widget
+          path: build.log
+          retention-days: 7
+          if-no-files-found: ignore
