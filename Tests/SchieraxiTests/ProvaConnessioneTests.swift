@@ -224,3 +224,28 @@ final class IndirizzoNonNellApp: XCTestCase {
         }
     }
 }
+
+/// La data delle versioni: con secondi se il server la manda con l'ora, solo il giorno se manda solo la data.
+final class DataVersioneTests: XCTestCase {
+    func testConOraESecondi() {
+        XCTAssertEqual(Quando.dataVersione("2026-10-30T14:05:09"), "30 ott 2026, 14:05:09")
+        XCTAssertEqual(Quando.dataVersione("2026-10-30 14:05:09"), "30 ott 2026, 14:05:09", "anche con lo spazio")
+        XCTAssertEqual(Quando.dataVersione("2026-12-01T00:00:00"), "1 dic 2026, 00:00:00")
+    }
+
+    func testSoloData() {
+        XCTAssertEqual(Quando.dataVersione("2026-10-30"), "30 ott 2026")
+    }
+
+    func testTestiStraniRestanoCosiCome() {
+        XCTAssertEqual(Quando.dataVersione("ieri"), "ieri")
+        XCTAssertEqual(Quando.dataVersione(nil), "")
+        XCTAssertEqual(Quando.dataVersione(""), "")
+        XCTAssertEqual(Quando.dataVersione("2026-13-45"), "2026-13-45")
+    }
+
+    func testIlFusoEQuelloItaliano() {
+        // il testo è già ora italiana: si scrive uguale, anche in estate (ora legale)
+        XCTAssertEqual(Quando.dataVersione("2026-07-15T23:59:59"), "15 lug 2026, 23:59:59")
+    }
+}
