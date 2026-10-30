@@ -28,6 +28,9 @@ jobs:
         id: sim
         run: |
           xcodebuild -version
+          # quali Xcode e quali SDK di iOS ci sono sul Mac di GitHub (per usare il piu' recente supportato)
+          ls -d /Applications/Xcode* 2>/dev/null || true
+          xcodebuild -showsdks | grep -i "iOS" || true
           IFS=$'\t' read -r UDID NOME IOS <<< "$(python3 -I scripts/scegli_simulatore.py iphone)"
           echo "Simulatore: $NOME ($IOS) $UDID"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
@@ -52,6 +55,11 @@ jobs:
           echo "Test falliti:"
           grep -cE "^Test Case .* failed" build/test.log || true
           xcrun xcresulttool get test-results summary --path build/test.xcresult --compact 2>/dev/null || true
+      - name: Avvisi di deprecazione
+        if: always()
+        run: |
+          echo "Avvisi di deprecazione (SDK recente):"
+          grep -E "warning:.*(deprecated|was deprecated)" build/test.log | sed -E 's#/Users/runner/work/[^/]+/[^/]+/##' | sort -u | head -n 40 || true
       - name: Riepilogo (righe con errori)
         if: failure()
         run: |
