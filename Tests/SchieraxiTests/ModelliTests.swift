@@ -39,7 +39,7 @@ final class ModelliTests: XCTestCase {
 
     func testFormazione() throws {
         let f: Formazione = try Fixture.decodifica("formazione")
-        XCTAssertEqual(f.squadra, "Squadra Demo")
+        XCTAssertEqual(f.squadra, "Nuvola Ovest")
         XCTAssertEqual(f.giornata, 9)
         XCTAssertEqual(f.modulo, "4-3-3")
         XCTAssertEqual(f.titolari.count, 11)
@@ -52,7 +52,7 @@ final class ModelliTests: XCTestCase {
         XCTAssertEqual(f.dev, 4.0)
         // i campi della previsione ci sono tutti
         let vicario = try XCTUnwrap(f.titolari.first)
-        XCTAssertEqual(vicario.nome, "Giocatore 094")
+        XCTAssertEqual(vicario.nome, "Viscardi")
         XCTAssertEqual(vicario.ruolo, "P")
         XCTAssertEqual(vicario.titolarita, "titolare")
         XCTAssertEqual(vicario.indice, 100)
@@ -66,7 +66,7 @@ final class ModelliTests: XCTestCase {
         XCTAssertEqual(m.svincolati, 353)
         XCTAssertNil(m.creditiResidui)
         XCTAssertEqual(m.rimborsoIpotizzato, 0.5)
-        XCTAssertEqual(m.proposte.first?.esce.nome, "Giocatore 005")
+        XCTAssertEqual(m.proposte.first?.esce.nome, "Bali V.")
         XCTAssertEqual(m.proposte.first?.giornate?.count, 5)
         XCTAssertNil(m.proposte.first?.creditiDopo)
     }
@@ -75,7 +75,7 @@ final class ModelliTests: XCTestCase {
         let c: ElencoGiocatori = try Fixture.decodifica("classifica")
         XCTAssertEqual(c.giornata, 9)
         XCTAssertEqual(c.giocatori.count, 8)
-        XCTAssertEqual(c.giocatori.first?.nome, "Giocatore 053")
+        XCTAssertEqual(c.giocatori.first?.nome, "Malvi")
         XCTAssertEqual(c.giocatori.first?.quotazione, 35)
         XCTAssertNotNil(c.giocatori.first?.proprietario)
     }
@@ -85,9 +85,9 @@ final class ModelliTests: XCTestCase {
         XCTAssertEqual(p.proposte.count, 5)
         XCTAssertEqual(p.giornate, [9, 10, 11, 12, 13])
         let prima = try XCTUnwrap(p.proposte.first)
-        XCTAssertEqual(prima.altra, "Lokomotiv Demo")
-        XCTAssertEqual(prima.`do`.first?.nome, "Giocatore 036")
-        XCTAssertEqual(prima.ricevo.first?.nome, "Giocatore 055")
+        XCTAssertEqual(prima.altra, "Lambda Rossa")
+        XCTAssertEqual(prima.`do`.first?.nome, "Kaleo")
+        XCTAssertEqual(prima.ricevo.first?.nome, "Mangoni")
         XCTAssertEqual(prima.guadagnoMio, 1.87, accuracy: 0.001)
         XCTAssertEqual(prima.perGiornataMio?.count, 5)
         // «reparti» è vuoto nelle proposte e non deve rompere la decodifica
@@ -97,7 +97,7 @@ final class ModelliTests: XCTestCase {
 
     func testRosa() throws {
         let r: Rosa = try Fixture.decodifica("rosa")
-        XCTAssertEqual(r.nome, "Squadra Demo")
+        XCTAssertEqual(r.nome, "Nuvola Ovest")
         XCTAssertEqual(r.mia, true)
         XCTAssertEqual(r.giocatori.count, 25)
         XCTAssertEqual(r.giocatori.first?.squadraSlug, "juventus")
@@ -133,14 +133,14 @@ final class ModelliTests: XCTestCase {
     func testSquadre() throws {
         let s: [SquadraLega] = try Fixture.decodifica("squadre")
         XCTAssertEqual(s.count, 10)
-        XCTAssertEqual(s.first?.nome, "Real Esempio")
+        XCTAssertEqual(s.first?.nome, "Borgo Alto")
         XCTAssertEqual(s.first?.immagini, ImmaginiSquadra(stemma: false, maglia: false))
         XCTAssertNil(s.first?.creditiResidui)
     }
 
     func testSchedaGiocatore() throws {
         let s: SchedaGiocatore = try Fixture.decodifica("giocatore")
-        XCTAssertEqual(s.calciatore.nome, "Giocatore 053")
+        XCTAssertEqual(s.calciatore.nome, "Malvi")
         XCTAssertEqual(s.calciatore.squadraSlug, "roma")
         XCTAssertEqual(s.stagione?.giornateGiocateSerieA, 8)
         XCTAssertEqual(s.voti?.count, 7)
@@ -150,7 +150,7 @@ final class ModelliTests: XCTestCase {
         XCTAssertEqual(s.avanzate?.stagioniPrecedenti?.count, 1)
         XCTAssertEqual(s.rendimento?.sovraRendimento, -0.29)
         XCTAssertEqual(s.previsione?.giornata, 9)
-        XCTAssertEqual(s.proprietario, "Under Prova")
+        XCTAssertEqual(s.proprietario, "FC Sotto 10,5")
     }
 
     func testConfronto() throws {
@@ -183,9 +183,9 @@ final class ModelliTests: XCTestCase {
 
     func testOffertaDaTesto() throws {
         let o: OffertaRiconosciuta = try Fixture.decodifica("da-testo")
-        XCTAssertEqual(o.con, "Lokomotiv Demo")
-        XCTAssertEqual(o.`do`, ["Giocatore 036"])
-        XCTAssertEqual(o.ricevo, ["Giocatore 055"])
+        XCTAssertEqual(o.con, "Lambda Rossa")
+        XCTAssertEqual(o.`do`, ["Kaleo"])
+        XCTAssertEqual(o.ricevo, ["Mangoni"])
         XCTAssertEqual(o.ambigui ?? [], [])
         XCTAssertEqual(o.analisi?.reparti?.mio?["D"], 12.1)
         XCTAssertEqual(o.analisi?.percentualeMio, 0.2)
@@ -196,7 +196,7 @@ final class ModelliTests: XCTestCase {
         XCTAssertEqual(a.crediti, 500)
         XCTAssertEqual(a.panchina, 60)
         XCTAssertEqual(a.ruoli.count, 4)
-        XCTAssertEqual(a.ruoli.first?.giocatori.first?.nome, "Giocatore 094")
+        XCTAssertEqual(a.ruoli.first?.giocatori.first?.nome, "Viscardi")
         XCTAssertEqual(a.ruoli.first?.giocatori.first?.prezzo, 65)
         let r: PianoRiparazione = try Fixture.decodifica("asta-riparazione")
         XCTAssertNil(r.tuoiCrediti)

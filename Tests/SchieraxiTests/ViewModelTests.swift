@@ -282,7 +282,7 @@ final class ScambiViewModelTests: XCTestCase {
         await vm.caricaProposte()
         XCTAssertEqual(vm.proposte.dato?.proposte.count, 5)
         XCTAssertEqual(vm.altre.count, 9, "10 squadre, una è la mia")
-        XCTAssertEqual(vm.propense.first?.nome, "Joga Finto")
+        XCTAssertEqual(vm.propense.first?.nome, "Jolly Bianca")
     }
 
     func testOffertaRicevutaDaTesto() async throws {
@@ -291,14 +291,14 @@ final class ScambiViewModelTests: XCTestCase {
         await vm.valutaOfferta()
         XCTAssertEqual(vm.erroreOfferta, "Incolla prima il messaggio.", "senza testo non si chiede niente")
         XCTAssertEqual(s.quante("da-testo"), 0)
-        vm.testoOfferta = "Ti do Giocatore 036 e tu mi dai Giocatore 055, ci stai?"
+        vm.testoOfferta = "Ti do Kaleo e tu mi dai Mangoni, ci stai?"
         await vm.valutaOfferta()
         XCTAssertNil(vm.erroreOfferta)
-        XCTAssertEqual(vm.esitoOfferta?.con, "Lokomotiv Demo")
-        XCTAssertEqual(vm.esitoOfferta?.`do`, ["Giocatore 036"])
+        XCTAssertEqual(vm.esitoOfferta?.con, "Lambda Rossa")
+        XCTAssertEqual(vm.esitoOfferta?.`do`, ["Kaleo"])
         XCTAssertNotNil(vm.esitoOfferta?.analisi)
         let corpo = String(decoding: try XCTUnwrap(s.corpiInviati(a: "POST /api/scambi/da-testo").last), as: UTF8.self)
-        XCTAssertTrue(corpo.contains("Ti do Giocatore 036"), corpo)
+        XCTAssertTrue(corpo.contains("Ti do Kaleo"), corpo)
     }
 
     func testOffertaConServerSpento() async {
@@ -323,15 +323,15 @@ final class ScambiViewModelTests: XCTestCase {
         let s = ServerDiProva.conFixture(["/api/squadre": "squadre", "/api/rosa": "rosa", "/api/scambi/analizza": "analisi"])
         let vm = AnalizzaScambioViewModel(server: s)
         XCTAssertFalse(vm.puoAnalizzare)
-        vm.altra = "Lokomotiv Demo"
+        vm.altra = "Lambda Rossa"
         vm.doIds = [7414]
         vm.ricevoIds = [7485]
         XCTAssertTrue(vm.puoAnalizzare)
         await vm.analizza()
-        XCTAssertEqual(vm.esito?.altra, "Lokomotiv Demo")
+        XCTAssertEqual(vm.esito?.altra, "Lambda Rossa")
         XCTAssertNil(vm.errore)
-        XCTAssertEqual(s.quante("GET /api/scambi/analizza?con=Lokomotiv%20Spritz&do=7414&ricevo=7485&completo=true"), 1)
-        XCTAssertEqual(ArchivioScambi.leggi().first?.dai, ["Giocatore 036"], "lo scambio analizzato finisce nell'archivio")
+        XCTAssertEqual(s.quante("GET /api/scambi/analizza?con=Lambda%20Rossa&do=7414&ricevo=7485&completo=true"), 1)
+        XCTAssertEqual(ArchivioScambi.leggi().first?.dai, ["Kaleo"], "lo scambio analizzato finisce nell'archivio")
     }
 }
 
@@ -352,7 +352,7 @@ final class MercatoEAstaViewModelTests: XCTestCase {
         XCTAssertEqual(vm.estiva.dato?.crediti, 500)
         XCTAssertEqual(vm.giocatori(vm.estiva.dato?.ruoli ?? []).count, 6)
         vm.ruolo = "P"
-        XCTAssertEqual(vm.giocatori(vm.estiva.dato?.ruoli ?? []).first?.nome, "Giocatore 094")
+        XCTAssertEqual(vm.giocatori(vm.estiva.dato?.ruoli ?? []).first?.nome, "Viscardi")
         XCTAssertEqual(s.quante("modo=riparazione"), 0, "la riparazione si carica solo quando la si sceglie")
         vm.modo = .riparazione
         await vm.carica()
@@ -397,9 +397,9 @@ final class MercatoEAstaViewModelTests: XCTestCase {
                                           "/api/formazione": "formazione"])
         let vm = SchedaGiocatoreViewModel(id: 5585, server: s)
         await vm.carica()
-        XCTAssertEqual(vm.caricatore.dato?.calciatore.nome, "Giocatore 053")
+        XCTAssertEqual(vm.caricatore.dato?.calciatore.nome, "Malvi")
         XCTAssertEqual(vm.osservato, false)
-        XCTAssertFalse(vm.inFormazione, "Giocatore 053 non è nella rosa della fixture")
+        XCTAssertFalse(vm.inFormazione, "Malvi non è nella rosa della fixture")
         XCTAssertEqual(vm.prossime.first?.avversario, "cagliari", "dal calendario della sua squadra (roma)")
         await vm.alternaOsservato()
         XCTAssertEqual(vm.osservato, true)

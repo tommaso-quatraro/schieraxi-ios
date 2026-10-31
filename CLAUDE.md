@@ -18,7 +18,7 @@ Il server e la logica (modello, formazioni, scambi) stanno nell'altro repository
 - I ViewModel ricevono un `ServerClient` nel costruttore (anteprime: `FinteServer`, test: `ServerDiProva`). Niente indirizzi veri nei test: solo `example.invalid`.
 - Il progetto Xcode **non è in git**: lo genera XcodeGen da `project.yml`. Modifica `project.yml`, mai un `.xcodeproj`.
 - Numeri e date sempre in italiano (`Formato`, `Quando`). Testi in italiano. Accessibilità: VoiceOver con frasi complete, aree di tocco da 44 pt, Dynamic Type.
-- **Il repository è PUBBLICO, di proposito**: così GitHub Actions su macOS compila gratis e SideStore scarica gli aggiornamenti. Deciso il 29/10/2026: i nomi della lega nelle fixture non sono sensibili e restano. Niente password, chiavi, indirizzi o dati personali veri (vedi "Chiavi e segreti").
+- **Il repository è PUBBLICO, di proposito**: così GitHub Actions su macOS compila gratis e SideStore scarica gli aggiornamenti. Deciso il 29/10/2026: le fixture sono dati INVENTATI (squadre e giocatori fittizi, dal 31/10/2026): mai copiare risposte di una lega vera. Niente password, chiavi, indirizzi o dati personali veri (vedi "Chiavi e segreti").
 
 ## Chiavi e segreti
 **Mai in git**: firme, certificati, profili, password, Apple ID. L'indirizzo del server NON sta nel repository né nell'IPA (entrambi pubblici): si scrive nell'app al primo avvio (e in Lega > Server) e resta sul telefono. Il widget lo ha nelle sue impostazioni (Modifica widget). Il workflow IPA fallisce se trova `ts.net` o il segreto `FANTA_HOST` dentro l'IPA.

@@ -119,7 +119,7 @@ final class LegaViewModelTests: XCTestCase {
         await vm.info.ricarica()
         await vm.stagione.ricarica()
         XCTAssertTrue(vm.nuovaStagione)
-        XCTAssertEqual(vm.info.dato?.miaSquadra, "Squadra Demo")
+        XCTAssertEqual(vm.info.dato?.miaSquadra, "Nuvola Ovest")
     }
 
     // MARK: regole
@@ -276,19 +276,19 @@ final class LegaViewModelTests: XCTestCase {
         let s = ServerDiProva.conFixture(["/api/squadre": "squadre"])
         let squadre = SquadreViewModel(server: s)
         await squadre.carica()
-        XCTAssertEqual(squadre.mia, "Squadra Demo", "la squadra segnata come «mia» nella fixture")
-        await squadre.impostaMia("Real Esempio")
+        XCTAssertEqual(squadre.mia, "Nuvola Ovest", "la squadra segnata come «mia» nella fixture")
+        await squadre.impostaMia("Borgo Alto")
         let corpo = String(decoding: try XCTUnwrap(s.corpiInviati(a: "PUT /api/mia-squadra").last), as: UTF8.self)
-        XCTAssertEqual(corpo, "{\"nome\":\"Real Esempio\"}")
+        XCTAssertEqual(corpo, "{\"nome\":\"Borgo Alto\"}")
         XCTAssertEqual(s.quante("GET /api/squadre"), 2, "dopo la scelta l'elenco si ricarica")
 
         let crediti = CreditiViewModel(server: s)
         await crediti.carica()
-        crediti.valori["Real Esempio"] = "120"
+        crediti.valori["Borgo Alto"] = "120"
         crediti.valori["Altra"] = "boh"   // non è un numero: non si manda
         await crediti.salva()
         let c = String(decoding: try XCTUnwrap(s.corpiInviati(a: "PUT /api/crediti").last), as: UTF8.self)
-        XCTAssertTrue(c.contains("\"Real Esempio\":120"), c)
+        XCTAssertTrue(c.contains("\"Borgo Alto\":120"), c)
         XCTAssertFalse(c.contains("Altra"), c)
         XCTAssertEqual(crediti.messaggio, "Crediti salvati.")
     }

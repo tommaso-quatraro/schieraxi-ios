@@ -33,7 +33,7 @@ Il server e la logica stanno in `schieraxi` (`C:\Users\utente\Progetti\schieraxi
 - Indirizzo: NON e' nell'app ne' nel repository (pubblici). Lo scrive l'utente al primo avvio (`PrimoAvvioView`) o in Lega > Server (`ProvaServerView`, con prova prima di salvare), in `UserDefaults` chiave `indirizzo`; solo `https://` (`http` solo verso localhost). Il widget lo ha nelle sue impostazioni (`ConfigurazioneWidget`). Mai l'indirizzo vero nel codice, nei test o nei log; l'IPA non lo contiene (controllo nel workflow). Un segreto `FANTA_HOST` serve solo a quel controllo.
 - Ogni richiesta che non e' GET/HEAD manda `X-Fanta: 1` (il server altrimenti risponde 403). Errori: `{"detail": "..."}` gia' in italiano, mostrati cosi' come sono.
 - Account (server con `FANTA_MULTIUTENTE=1`): login con `nativo: true`, il token torna nel corpo e si manda come `Authorization: Bearer`; sta SOLO nel Keychain (mai UserDefaults, mai log). 401 = serve accesso (`ErroreApi.accessoRichiesto`), 429 con `Retry-After` = troppi tentativi.
-- Il server si aggiorna da solo su un Raspberry: aggiungere campi e' sicuro, togliere o rinominare campi rompe l'app gia' installata. Decodifica tollerante (campi nuovi opzionali). Le fixture in `Tests/Fixtures` si rifanno col server locale del repo `schieraxi`.
+- Il server si aggiorna da solo su un Raspberry: aggiungere campi e' sicuro, togliere o rinominare campi rompe l'app gia' installata. Decodifica tollerante (campi nuovi opzionali). Le fixture in `Tests/Fixtures` sono dati inventati: se la struttura cambia si aggiornano a mano.
 - Ore tranquille (`silenzio`, `silenzio_da`, `silenzio_a` degli avvisi): `Domain/OreTranquille.swift`; i promemoria locali le rispettano (le ricorda in UserDefaults). Il nome e' sempre «SchieraXI» con la U maiuscola. Con «Riduci movimento»: dissolvenze e onda di opacita', mai movimenti (`Tema.molla/morbida/quieta`, `.transizione`).
 - Modifiche di contratto: farle prima lato server (retrocompatibili), poi qui.
 - Offline: l'ultima risposta di ogni schermata e' in `Caches/api` (max 150 file, per server); "Server non raggiungibile. Dati salvati del ...".
@@ -46,7 +46,7 @@ Il server e la logica stanno in `schieraxi` (`C:\Users\utente\Progetti\schieraxi
 - I target di test NON devono finire nell'IPA (controllato dal workflow). `Config/Info.plist` e' generato e ignorato da git.
 
 ## Punti delicati
-- Mai in git: firme, certificati, profili, password, Apple ID, indirizzo del Pi. Le fixture hanno i nomi di una lega reale: accettato il 29/10/2026 (repo pubblico).
+- Mai in git: firme, certificati, profili, password, Apple ID, indirizzo del Pi. Le fixture sono dati inventati (squadre e giocatori fittizi).
 - Installazione: IPA non firmato, lo firma SideStore con Apple ID gratuito: certificato 7 giorni, max 3 app, LocalDevVPN accesa, una sola VPN alla volta. Nessuna notifica push (APNs): avvisi via ntfy + `schieraxi://`.
 - App Group (indirizzo, token e ultimo riassunto condivisi col widget): `Sources/Support/Condiviso.swift`. Con l'Apple ID gratuito funziona se i permessi sono dentro l'IPA (ldid in `ipa.yml`) e SideStore scrive il nome vero in Info.plist `ALTAppGroups`: l'app lo legge a runtime. NON provato su un telefono vero: se il widget chiede ancora l'accesso o l'indirizzo, il gruppo non e' stato registrato (ripiego: indirizzo nelle impostazioni del widget).
 - Se SideStore protesta per i limiti, si toglie il target `SchieraxiWidget` e la riga `dependencies` da `project.yml`.
