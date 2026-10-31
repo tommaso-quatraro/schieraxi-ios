@@ -341,3 +341,33 @@ final class DiarioSchierataTests: XCTestCase {
         XCTAssertNil(vm.inSalvataggio)
     }
 }
+
+/// Diario: la formazione schierata a mano.
+@MainActor
+final class DiarioManualeTests: XCTestCase {
+    func testManualeManda11TitolariEUnTipoGiusto() async throws {
+        let s = ServerDiProva { metodo, percorso, _ in
+            if metodo == "POST" { return Data(#"{"giornata": 9}"#.utf8) }
+            return Data(#"{"giornate": [], "sintesi": {"giornate": 0}}"#.utf8)
+        }
+        let vm = DiarioViewModel(server: s)
+        let ids = Array(1...11)
+        let ok = await vm.haSchieratoAMano(giornata: 9, titolari: ids)
+        XCTAssertTrue(ok)
+        let corpo = try XCTUnwrap(s.corpiInviati(a: "/api/diario/schierata").first)
+        let letto = try XCTUnwrap(JSONSerialization.jsonObject(with: corpo) as? [String: Any])
+        XCTAssertEqual(letto["tipo"] as? String, "manuale")
+        XCTAssertEqual(letto["giornata"] as? Int, 9)
+        XCTAssertEqual(letto["titolari"] as? [Int], ids)
+        XCTAssertTrue(vm.messaggioRiuscito)
+    }
+
+    func testUnRifiutoDelServerNonChiudeESiVede() async {
+        let s = ServerDiProva { _, _, _ in throw ErroreApi.server("Tra i titolari ci sono giocatori che non sono nella tua rosa") }
+        let vm = DiarioViewModel(server: s)
+        let ok = await vm.haSchieratoAMano(giornata: 9, titolari: Array(1...11))
+        XCTAssertFalse(ok)
+        XCTAssertFalse(vm.messaggioRiuscito)
+        XCTAssertTrue((vm.messaggio ?? "").contains("non sono nella tua rosa"))
+    }
+}
