@@ -53,3 +53,44 @@ final class TempiLegaTests: XCTestCase {
         XCTAssertEqual(pronte.valore("prima_giornata_lega"), .intero(4))
     }
 }
+
+/// La giornata di lega nelle formazioni, nel testo condiviso e nei widget.
+final class GiornataLegaTests: XCTestCase {
+    func testEtichetta() {
+        XCTAssertEqual(TempiLega.etichetta(serieA: 11, lega: 8), "Giornata 8 di lega (Serie A 11)")
+        XCTAssertEqual(TempiLega.etichetta(serieA: 11, lega: 11), "Giornata 11")
+        XCTAssertEqual(TempiLega.etichetta(serieA: 11, lega: nil), "Giornata 11")
+        XCTAssertEqual(TempiLega.etichetta(serieA: 11, lega: -2), "Giornata 11")
+        XCTAssertEqual(TempiLega.sigla(serieA: 11, lega: 8), "G8")
+        XCTAssertEqual(TempiLega.sigla(serieA: 11, lega: nil), "G11")
+    }
+
+    func testTestoCondiviso() {
+        XCTAssertEqual(TestoFormazione.crea(giornata: 11, giornataLega: 8, modulo: "4-3-3", titolari: [], panchina: []).components(separatedBy: "\n").first,
+                       "Giornata 8 di lega (Serie A 11) · 4-3-3")
+        XCTAssertEqual(TestoFormazione.crea(giornata: 11, modulo: "4-3-3", titolari: [], panchina: []).components(separatedBy: "\n").first,
+                       "Giornata 11 · 4-3-3")
+    }
+
+    func testIlWidgetLeggeLaGiornataDiLega() throws {
+        let con = RiassuntoWidget.leggi(Data(#"{"giornata": 11, "giornata_lega": 8}"#.utf8))
+        XCTAssertEqual(con?.etichettaGiornata, "Giornata 8 di lega (Serie A 11)")
+        XCTAssertEqual(con?.siglaGiornata, "G8")
+        XCTAssertEqual(con?.comeRiassuntoOggi()?.etichettaGiornata, "Giornata 8 di lega (Serie A 11)")
+        // server vecchio o valore nullo
+        let senza = RiassuntoWidget.leggi(Data(#"{"giornata": 11, "giornata_lega": null}"#.utf8))
+        XCTAssertEqual(senza?.etichettaGiornata, "Giornata 11")
+        XCTAssertNil(RiassuntoWidget.leggi(Data(#"{}"#.utf8))?.etichettaGiornata)
+    }
+
+    func testIlRiassuntoVecchioSenzaGiornataDiLegaSiLegge() throws {
+        let vecchio = Data(#"{"giornata": 9, "daControllare": 0, "scaricatoIl": 0}"#.utf8)
+        let r = try JSONDecoder().decode(RiassuntoOggi.self, from: vecchio)
+        XCTAssertEqual(r.etichettaGiornata, "Giornata 9")
+    }
+
+    func testFormazioneSenzaGiornataDiLega() throws {
+        let f: Formazione = try Fixture.decodifica("formazione")
+        XCTAssertEqual(f.etichettaGiornata, "Giornata \(f.giornata)")
+    }
+}
