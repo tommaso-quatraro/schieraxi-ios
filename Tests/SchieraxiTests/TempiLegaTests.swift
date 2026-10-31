@@ -52,6 +52,14 @@ final class TempiLegaTests: XCTestCase {
         XCTAssertEqual(pronte.valore("scadenza_minuti"), .intero(30))
         XCTAssertEqual(pronte.valore("prima_giornata_lega"), .intero(4))
     }
+
+    func testAggiornamentiVicinoAllaScadenzaSiConservanoENonSiInventano() throws {
+        var regole = try JSONDecoder().decode(JSONValue.self, from: Data(#"{"nome_lega":"Lega","moduli":["3-4-3"]}"#.utf8))
+        // server vecchio: il campo manca e nel salvataggio non compare (il server lo considera acceso)
+        XCTAssertNil(try RegoleLogica.preparaPerSalvataggio(regole).valore("aggiornamenti_vicino_scadenza"))
+        regole.imposta("aggiornamenti_vicino_scadenza", .booleano(false))
+        XCTAssertEqual(try RegoleLogica.preparaPerSalvataggio(regole).valore("aggiornamenti_vicino_scadenza"), .booleano(false))
+    }
 }
 
 /// La giornata di lega nelle formazioni, nel testo condiviso e nei widget.
