@@ -331,13 +331,12 @@ final class AvatarTests: XCTestCase {
 
 final class NomiDatiTests: XCTestCase {
     func testINomiGrezziDiventanoParole() {
-        XCTAssertEqual(NomiDati.leggibile("quote-odds"), "Quote delle partite")
         XCTAssertEqual(NomiDati.leggibile("dati-extra"), "Dati extra delle partite")
-        XCTAssertEqual(NomiDati.leggibile("quote-giocatore 2026-27 g10"), "Quote dei giocatori (giornata 10)")
-        XCTAssertEqual(NomiDati.leggibile("quote-giocatore"), "Quote dei giocatori")
         XCTAssertEqual(NomiDati.leggibile("crediti-giocatore 2026-10"), "Crediti dei giocatori")
         XCTAssertEqual(NomiDati.leggibile("qualcosa-di_nuovo"), "Qualcosa di nuovo")
         XCTAssertEqual(NomiDati.leggibile(""), "")
+        XCTAssertTrue(NomiDati.daNascondere("quote-odds"), "le fonti vecchie non si mostrano")
+        XCTAssertFalse(NomiDati.daNascondere("voti"))
     }
 }
 
