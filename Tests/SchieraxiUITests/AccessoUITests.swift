@@ -78,7 +78,7 @@ final class AccessoUITests: XCTestCase {
         attendi("Il tuo account")
         attendi("mister.rossi")
         attendi("Cambia password")
-        attendi("Nuovo codice di recupero")
+        attendi("Nuovo codice per recuperare l'accesso")
         attendi("Elimina l'account")
         XCTAssertTrue(app.buttons["Esci"].exists)
     }
