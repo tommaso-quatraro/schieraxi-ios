@@ -9,12 +9,12 @@ final class GeneratoreVoltoTests: XCTestCase {
 
     func testIVettoriDellaSpecifica() {
         let vettori: [Int: [Int]] = [
-            1: [5, 0, 10, 0, 3, 1, 0, 1, 0, 1],
-            2: [3, 0, 0, 1, 4, 0, 0, 1, 0, 0],
-            3: [0, 2, 7, 7, 0, 0, 0, 0, 0, 0],
-            100: [1, 2, 2, 7, 3, 0, 1, 0, 1, 1],
+            1: [2, 0, 10, 0, 3, 1, 0, 1, 0, 1],
+            2: [2, 0, 0, 1, 4, 0, 0, 1, 0, 0],
+            3: [2, 2, 7, 7, 0, 0, 0, 0, 0, 0],
+            100: [2, 2, 2, 7, 3, 0, 1, 0, 1, 1],
             4567: [2, 0, 0, 7, 0, 2, 2, 0, 0, 0],
-            7627: [0, 0, 4, 1, 2, 1, 2, 0, 0, 0],
+            7627: [2, 0, 4, 1, 2, 1, 2, 0, 0, 0],
         ]
         for (id, atteso) in vettori {
             XCTAssertEqual(GeneratoreVolto.estrai(id: id).elenco, indici(atteso), "id \(id)")
@@ -23,8 +23,8 @@ final class GeneratoreVoltoTests: XCTestCase {
 
     func testLeRegoleDiCoerenza() {
         // 140: orecchino (2) con acconciatura lunga (4) -> nessun accessorio; 170: fascia (1) con cresta (7) -> nessuno
-        XCTAssertEqual(GeneratoreVolto.estraiGrezzo(id: 140).elenco, indici([3, 2, 4, 3, 1, 2, 0, 1, 2, 1]))
-        XCTAssertEqual(GeneratoreVolto.estrai(id: 140).elenco, indici([3, 2, 4, 3, 1, 2, 0, 1, 0, 1]))
+        XCTAssertEqual(GeneratoreVolto.estraiGrezzo(id: 140).elenco, indici([2, 2, 4, 3, 1, 2, 0, 1, 2, 1]))
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 140).elenco, indici([2, 2, 4, 3, 1, 2, 0, 1, 0, 1]))
         XCTAssertEqual(GeneratoreVolto.estraiGrezzo(id: 170).elenco, indici([2, 2, 7, 7, 1, 1, 0, 1, 1, 0]))
         XCTAssertEqual(GeneratoreVolto.estrai(id: 170).elenco, indici([2, 2, 7, 7, 1, 1, 0, 1, 0, 0]))
     }
@@ -62,7 +62,7 @@ final class GeneratoreVoltoTests: XCTestCase {
     }
 
     func testITrattiNonToccanoLeNoveEstrazioniDellaVersione3() {
-        let tratti = TrattiVolto(c: 5, a: "C", b: 1)
+        let tratti = TrattiVolto(p: 4, c: 5, a: "C", b: 1, f: 1)
         for id in [1, 2, 3, 100, 4567, 7627] {
             XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: tratti).elenco3, GeneratoreVolto.estrai(id: id).elenco3, "id \(id)")
         }
@@ -81,7 +81,7 @@ final class GeneratoreVoltoTests: XCTestCase {
 
     func testIVoltiSonoQuasiTuttiDiversi() {
         let diversi = Set((1...3000).map { GeneratoreVolto.estrai(id: $0).elenco })
-        XCTAssertGreaterThan(diversi.count, 2950, "la specifica dichiara 2986 volti diversi su 3000 codici")
+        XCTAssertGreaterThan(diversi.count, 2900, "con la pelle fissa la specifica dichiara 2928 volti diversi su 3000 codici (soglia della web: 2900)")
     }
 
     func testIColoriDerivatiConLArrotondamentoDellaSpecifica() {
@@ -169,14 +169,36 @@ final class AvatarVersione2Tests: XCTestCase {
         GeneratoreVolto.estrai(id: id, tratti: json.flatMap { tratti($0) }).elenco
     }
 
-    func testIVettoriDellaVersione2() {
-        XCTAssertEqual(elenco(1, #"{"c":3,"a":"L","b":1}"#), [5, 0, 4, 3, 3, 1, 0, 1, 0, 1])
-        XCTAssertEqual(elenco(2, #"{"c":0,"a":"R","b":0}"#), [3, 0, 0, 0, 0, 0, 0, 1, 0, 0])
-        XCTAssertEqual(elenco(3, #"{"c":5,"a":"C","b":1}"#), [0, 2, 7, 5, 4, 0, 0, 0, 0, 0])
-        XCTAssertEqual(elenco(100, #"{"a":"I","b":1}"#), [1, 2, 2, 7, 3, 0, 1, 0, 1, 1])
-        XCTAssertEqual(elenco(5, #"{"p":6}"#), elenco(5, nil), "una carnagione ricevuta si ignora: la pelle viene dal seme")
-        XCTAssertEqual(elenco(4567, #"{"c":6}"#), [2, 0, 0, 6, 0, 2, 2, 0, 0, 0])
-        XCTAssertEqual(elenco(7627, #"{"c":9,"a":"X"}"#), [0, 0, 4, 1, 2, 1, 2, 0, 0, 0], "campi non validi: come senza tratti")
+    func testIVettoriDellaSezione8() {
+        // docs/AVATAR.md, sezione 8 (VETTORE2): stessi numeri della web
+        XCTAssertEqual(elenco(1, #"{"p":4,"c":3,"a":"L","b":1}"#), [4, 0, 4, 3, 3, 1, 0, 1, 0, 1])
+        XCTAssertEqual(elenco(2, #"{"c":0,"a":"R","b":0}"#), [2, 0, 0, 0, 0, 0, 0, 1, 0, 0])
+        XCTAssertEqual(elenco(3, #"{"p":1,"c":5,"a":"C","b":1,"f":1}"#), [1, 2, 7, 5, 3, 0, 0, 0, 0, 0], "barba folta: piena")
+        XCTAssertEqual(elenco(100, #"{"a":"I","b":1,"f":0}"#), [2, 2, 2, 7, 2, 0, 1, 0, 1, 1], "non folta: la piena diventa corta")
+        XCTAssertEqual(elenco(4567, #"{"p":6,"c":6}"#), [6, 0, 0, 6, 0, 2, 2, 0, 0, 0])
+        XCTAssertEqual(elenco(7627, #"{"c":9,"a":"X"}"#), [2, 0, 4, 1, 2, 1, 2, 0, 0, 0], "campi non validi: come senza tratti")
+        XCTAssertEqual(elenco(1, #"{"b":1,"f":0}"#), [2, 0, 10, 0, 4, 1, 0, 1, 0, 1], "non folta: la piena diventa baffi")
+    }
+
+    func testLaPelleSenzaPNonVieneMaiDalSeme() {
+        for id in 0..<500 {
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id).pelle, 2, "id \(id)")
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: TrattiVolto(c: 1, b: 1)).pelle, 2, "id \(id)")
+        }
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 7, tratti: TrattiVolto(p: 0)).pelle, 0)
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 7, tratti: TrattiVolto(p: 6)).pelle, 6)
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 7, tratti: TrattiVolto(p: 7)).pelle, 2, "fuori scala: la neutra")
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 7, tratti: TrattiVolto(p: -1)).pelle, 2)
+    }
+
+    func testLaBarbaFoltaSiUsaSoloConBarba() {
+        // f senza b non fa niente; f=1 con b=0 neppure
+        for id in 1...200 {
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: TrattiVolto(f: 1)), GeneratoreVolto.estrai(id: id), "id \(id)")
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: TrattiVolto(b: 0, f: 1)).barba, 0)
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: TrattiVolto(b: 1, f: 1)).barba, 3)
+            XCTAssertTrue([2, 4].contains(GeneratoreVolto.estrai(id: id, tratti: TrattiVolto(b: 1, f: 0)).barba), "id \(id)")
+        }
     }
 
     func testSenzaTrattiEIdenticaAllaVersione1() {
@@ -187,26 +209,30 @@ final class AvatarVersione2Tests: XCTestCase {
     }
 
     func testIVettoriDellaVersione1NonCambiano() {
-        XCTAssertEqual(GeneratoreVolto.estrai(id: 1).elenco, [5, 0, 10, 0, 3, 1, 0, 1, 0, 1])
-        XCTAssertEqual(GeneratoreVolto.estrai(id: 7627).elenco, [0, 0, 4, 1, 2, 1, 2, 0, 0, 0])
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 1).elenco, [2, 0, 10, 0, 3, 1, 0, 1, 0, 1])
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 7627).elenco, [2, 0, 4, 1, 2, 1, 2, 0, 0, 0])
     }
 
     func testITrattiSiLeggonoConTolleranza() {
         XCTAssertEqual(tratti(#"{"c": "ciao", "b": 1}"#), TrattiVolto(c: nil, a: nil, b: 1))
         XCTAssertEqual(tratti(#"{"a": 5, "b": 1}"#), TrattiVolto(c: nil, a: nil, b: 1))
-        XCTAssertEqual(tratti(#"{"p": 5, "c": 3}"#), TrattiVolto(c: 3), "la carnagione del server si ignora")
+        XCTAssertEqual(tratti(#"{"p": 5, "c": 3, "f": 1}"#), TrattiVolto(p: 5, c: 3, f: 1))
+        XCTAssertEqual(tratti(#"{"p": "x", "f": 99999999999999999999}"#), TrattiVolto(), "tipi sbagliati o enormi: come mancanti")
         XCTAssertEqual(tratti("{}"), TrattiVolto())
     }
 
     func testIlDepositoLeggeLaRispostaDelServer() {
-        let corpo = #"{"versione": 2, "tratti": {"1": {"c": 3, "a": "L", "b": 1}, "2": {"c": 6}, "xx": {"c": 1}, "3": "rotto", "-5": {"c": 1}}}"#
+        let corpo = #"{"versione": 3, "tratti": {"1": {"p": 2, "c": 3, "a": "L", "b": 1, "f": 1}, "2": {"c": 6}, "xx": {"c": 1}, "3": "rotto", "-5": {"c": 1}}}"#
         let m = DepositoTratti.leggi(Data(corpo.utf8))
         XCTAssertEqual(m?.count, 2, "le voci rotte si saltano, le altre restano")
-        XCTAssertEqual(m?[1], TrattiVolto(c: 3, a: "L", b: 1))
+        XCTAssertEqual(m?[1], TrattiVolto(p: 2, c: 3, a: "L", b: 1, f: 1))
         XCTAssertEqual(m?[2]?.c, 6)
         XCTAssertNil(DepositoTratti.leggi(Data("[]".utf8)))
         XCTAssertNil(DepositoTratti.leggi(Data()))
-        XCTAssertNil(DepositoTratti.leggi(Data(#"{"versione": 2}"#.utf8)))
+        XCTAssertNil(DepositoTratti.leggi(Data(#"{"versione": 3}"#.utf8)))
+        // la versione 2 del contratto (senza `f`) si legge uguale
+        let v2 = DepositoTratti.leggi(Data(#"{"versione": 2, "tratti": {"9": {"c": 1, "b": 1}}}"#.utf8))
+        XCTAssertEqual(v2?[9], TrattiVolto(c: 1, b: 1))
     }
 
     func testIlDepositoScaricaEUnVoltoCambiaConITratti() async throws {
