@@ -18,6 +18,27 @@ final class ModelliTests: XCTestCase {
         XCTAssertEqual(o.partite?.first?.casa, "sassuolo")
     }
 
+    func testOggiTuaSceltaOConsigliata() throws {
+        func leggi(_ f: String) throws -> Oggi {
+            let d = JSONDecoder()
+            d.keyDecodingStrategy = .convertFromSnakeCase
+            return try d.decode(Oggi.self, from: Data(#"{"giornata":9,"formazione":\#(f)}"#.utf8))
+        }
+        let tua = try leggi(#"{"modulo":"4-4-2","punteggio_atteso":71.7,"tua_scelta":true}"#).formazione
+        XCTAssertEqual(tua?.modulo, "4-4-2")
+        XCTAssertEqual(tua?.tuaScelta, true)
+        XCTAssertEqual(tua?.titoloScheda, "La tua formazione · la tua scelta")
+        let consigliata = try leggi(#"{"modulo":"5-3-2","punteggio_atteso":70.1,"tua_scelta":false}"#).formazione
+        XCTAssertEqual(consigliata?.tuaScelta, false)
+        XCTAssertEqual(consigliata?.titoloScheda, "La formazione consigliata")
+        // server vecchio (campo assente) o campo strano: vale «consigliata», e il resto si legge lo stesso
+        let vecchio = try leggi(#"{"modulo":"5-3-2","punteggio_atteso":70.1}"#).formazione
+        XCTAssertEqual(vecchio?.tuaScelta, false)
+        let strano = try leggi(#"{"modulo":"5-3-2","punteggio_atteso":70.1,"tua_scelta":"si"}"#).formazione
+        XCTAssertEqual(strano?.tuaScelta, false)
+        XCTAssertEqual(strano?.modulo, "5-3-2")
+    }
+
     func testProbabiliFresche() throws {
         func oggi(_ extra: String) throws -> Oggi {
             try Decodifica.decodifica(Data("{\"giornata\": 9\(extra)}".utf8))

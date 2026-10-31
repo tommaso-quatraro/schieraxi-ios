@@ -29,6 +29,18 @@ final class WidgetRiassuntoTests: XCTestCase {
         try XCTUnwrap(RiassuntoWidget.leggi(Data(Self.corpo.utf8)))
     }
 
+    func testWidgetTuaSceltaTollerante() throws {
+        func leggi(_ campo: String) throws -> RiassuntoWidget {
+            let corpo = #"{"giornata": 11, "formazione": {"modulo": "4-4-2", "punti_attesi": 71.7\#(campo)}}"#
+            return try XCTUnwrap(RiassuntoWidget.leggi(Data(corpo.utf8)))
+        }
+        XCTAssertEqual(try leggi(#", "tua_scelta": true"#).formazione?.tuaScelta, true)
+        XCTAssertNotEqual(try leggi("").formazione?.tuaScelta, true, "senza il campo è la consigliata")
+        let strano = try leggi(#", "tua_scelta": "forse""#).formazione
+        XCTAssertNotEqual(strano?.tuaScelta, true)
+        XCTAssertEqual(strano?.modulo, "4-4-2", "un campo strano non rompe il resto")
+    }
+
     func testSiLeggeTuttoIlContratto() throws {
         let w = try riassunto()
         XCTAssertEqual(w.giornata, 11)
