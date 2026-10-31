@@ -164,6 +164,26 @@ final class WidgetRiassuntoTests: XCTestCase {
         XCTAssertNil(senza.formazione?.intervallo, "un server vecchio non lo manda")
     }
 
+    func testLaFasciaDelDiarioEDoveSonoCadutiIPunti() throws {
+        let c = #"""
+        {"giornata": 11, "diario": [
+          {"giornata": 10, "attesi": 66, "fatti": 63.5, "intervallo": {"basso": 55, "alto": 77, "confidenza": 0.8}},
+          {"giornata": 9, "attesi": 67, "fatti": 90, "intervallo": {"basso": 56, "alto": 78}},
+          {"giornata": 8, "attesi": 69, "fatti": 50, "intervallo": {"basso": 58, "alto": 80}},
+          {"giornata": 7, "attesi": 70, "fatti": 64, "intervallo": "strano"},
+          {"giornata": 6, "attesi": 70, "fatti": 64}]}
+        """#
+        let w = try XCTUnwrap(RiassuntoWidget.leggi(Data(c.utf8)))
+        let g = w.giornateGiocate
+        XCTAssertEqual(g.map(\.postoNellaFascia), [.dentro, .sopra, .sotto, nil, nil])
+        XCTAssertEqual(g.first?.fasciaTesto, "dentro la fascia")
+        XCTAssertEqual(g.first?.descrizione, "Giornata 10: 63,5 punti fatti, 66,0 attesi, dentro la fascia prevista, tra 55 e 77")
+        XCTAssertEqual(g[3].descrizione, "Giornata 7: 64,0 punti fatti, 70,0 attesi", "una fascia con la forma sbagliata si ignora")
+        let q = RiassuntoWidget.quanteDentro(g)
+        XCTAssertEqual(q.dentro, 1)
+        XCTAssertEqual(q.su, 3)
+    }
+
     func testIlGiocatoreOsservatoScelto() throws {
         let w = try riassunto()
         XCTAssertEqual(w.osservato(30)?.id, 30, "tra gli osservati")
