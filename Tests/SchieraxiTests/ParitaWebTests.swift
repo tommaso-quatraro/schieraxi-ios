@@ -75,6 +75,17 @@ final class OreTranquilleTests: XCTestCase {
         let corpo = String(decoding: try JSONEncoder().encode(v), as: UTF8.self)
         XCTAssertFalse(corpo.contains("silenzio"), corpo)
     }
+
+    func testOreTranquilleSpenteDalServerEDecodificaTollerante() throws {
+        let imp = #""impostazioni": {"cambi": true, "promemoria_60": true, "promemoria_15": true, "riepilogo": true}"#
+        func stato(_ extra: String) throws -> StatoAvvisi {
+            try JSONDecoder().decode(StatoAvvisi.self, from: Data("{\(imp)\(extra)}".utf8))
+        }
+        XCTAssertTrue(try stato(#", "ore_tranquille_spente": true"#).oreTranquilleSpente)
+        XCTAssertFalse(try stato("").oreTranquilleSpente)                                  // campo mancante: niente
+        XCTAssertFalse(try stato(#", "ore_tranquille_spente": null"#).oreTranquilleSpente)
+        XCTAssertFalse(try stato(#", "ore_tranquille_spente": "si""#).oreTranquilleSpente) // tipo strano: niente
+    }
 }
 
 final class VersioniEConflittiTests: XCTestCase {
