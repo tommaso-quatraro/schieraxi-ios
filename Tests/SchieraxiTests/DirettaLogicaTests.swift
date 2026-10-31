@@ -118,6 +118,17 @@ final class DirettaLogicaTests: XCTestCase {
         XCTAssertFalse(DirettaLogica.golSegnato(prima: nil, dopo: try p(1, 0)))
     }
 
+    func testAnnuncioDelGolPerVoiceOver() throws {
+        let prima = try live(#"{"partite": [{"casa": "inter", "trasferta": "roma", "stato": "primo_tempo", "gol_casa": 0, "gol_trasferta": 0}]}"#).partite?.first
+        let dopo = try live("""
+        {"partite": [{"casa": "inter", "trasferta": "roma", "stato": "primo_tempo", "minuto": "10'", "gol_casa": 1, "gol_trasferta": 0,
+                      "eventi": [{"tipo": "giallo", "minuto": "5'", "squadra": "casa", "chi": "Giocatore 004"}, {"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thuram"}]}]}
+        """).partite?.first
+        XCTAssertEqual(DirettaLogica.annuncioGol(casa: "inter", trasferta: "roma", prima: prima, dopo: dopo), "Gol! Inter 1, Roma 0. Gol di Thuram al minuto 10")
+        XCTAssertNil(DirettaLogica.annuncioGol(casa: "inter", trasferta: "roma", prima: dopo, dopo: dopo), "nessun gol nuovo, nessun annuncio")
+        XCTAssertNil(DirettaLogica.annuncioGol(casa: "inter", trasferta: "roma", prima: nil, dopo: dopo), "il primo dato non si annuncia")
+    }
+
     // MARK: abbinamento e recuperi
 
     func testAbbinaPerCasaETrasfertaEAggiungeIRecuperiInCorso() throws {
