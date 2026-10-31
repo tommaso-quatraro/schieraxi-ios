@@ -1,6 +1,6 @@
 import XCTest
 
-/// Test di fumo dell'interfaccia: l'app parte in modalità demo (dati finti, senza rete), le cinque sezioni si raggiungono
+/// Test di fumo dell'interfaccia: l'app parte in modalità demo (dati finti, senza rete, tutte le funzioni accese), le quattro sezioni si raggiungono
 /// e le schermate principali mostrano il testo atteso. Si cerca per testo (etichetta di accessibilità), non per posizione.
 final class FumoUITests: XCTestCase {
     private var app: XCUIApplication!
@@ -37,10 +37,10 @@ final class FumoUITests: XCTestCase {
         barra.buttons[sezione].firstMatch.tap()   // con iOS 26 la barra a volte espone due elementi per la stessa scheda
     }
 
-    func testLeCinqueSezioniSonoRaggiungibili() {
+    func testLeQuattroSezioniSonoRaggiungibili() {
         let barra = app.tabBars.firstMatch
         XCTAssertTrue(barra.waitForExistence(timeout: 30), "la barra delle sezioni deve comparire")
-        for nome in ["Oggi", "Formazione", "Mercato", "Scambi", "Lega"] {
+        for nome in ["Oggi", "Formazione", "Squadra", "Altro"] {
             XCTAssertTrue(barra.buttons[nome].exists, "manca la sezione \(nome)")
         }
     }
@@ -67,19 +67,28 @@ final class FumoUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Modifica a mano"].waitForExistence(timeout: 20), "tornando alla consigliata ricompare «Modifica a mano»")
     }
 
-    func testMercatoSezioni() {
-        vaiA("Mercato")
-        attendi("Svincolati che migliorano la squadra")
-        for sezione in ["Consigliati", "Giocatori", "Osservati", "Calendario"] {
-            XCTAssertTrue(app.buttons[sezione].waitForExistence(timeout: 10), "manca la sezione \(sezione) del Mercato")
+    func testSquadraConLeSuePagine() {
+        vaiA("Squadra")
+        attendi("Aggiorna le rose")
+        for voce in ["Aggiorna le rose", "Squadre e rose", "Cambi consigliati", "Seguiti", "Elenco dei giocatori", "Calendario"] {
+            attendiScorrendo(voce, contiene: true)
         }
-        XCTAssertFalse(app.buttons["Asta"].exists, "l'asta sta in Lega")
-        app.buttons["Giocatori"].tap()
+        XCTAssertFalse(elemento("Asta e riparazione", contiene: true).exists, "l'asta sta in Altro")
+        elemento("Cambi consigliati", contiene: true).tap()
+        attendi("Svincolati che migliorano la squadra")
+    }
+
+    func testElencoDeiGiocatoriDentroSquadra() {
+        vaiA("Squadra")
+        attendiScorrendo("Elenco dei giocatori", contiene: true)
+        elemento("Elenco dei giocatori", contiene: true).tap()
         attendi("Solo svincolati")
     }
 
     func testScambiConOffertaEAnalisi() {
-        vaiA("Scambi")
+        vaiA("Altro")
+        attendi("Scambi", contiene: true)
+        elemento("Scambi", contiene: true).tap()
         XCTAssertTrue(app.buttons["Cerca scambi"].waitForExistence(timeout: 20), "le proposte si cercano con il pulsante")
         for modo in ["Trova per me", "Costruisci", "Valuta un'offerta"] {
             XCTAssertTrue(app.buttons[modo].waitForExistence(timeout: 10), "manca il modo «\(modo)»")
@@ -91,16 +100,16 @@ final class FumoUITests: XCTestCase {
         attendi("Squadra")
     }
 
-    func testLegaConLeNuovePagine() {
-        vaiA("Lega")
-        attendi("Aggiorna le rose")
-        for voce in ["Aggiorna le rose", "Squadre e rose", "Movimenti e storico", "Asta e riparazione", "Regole"] {
+    func testAltroConLeSuePagine() {
+        vaiA("Altro")
+        attendi("Scambi", contiene: true)
+        for voce in ["Scambi", "Movimenti e storico", "Asta e riparazione", "Regole", "Diario delle giornate"] {
             attendiScorrendo(voce, contiene: true)
         }
     }
 
     func testImpostazioniDallIngranaggio() {
-        vaiA("Lega")
+        vaiA("Altro")
         let ingranaggio = app.buttons["Impostazioni"]
         XCTAssertTrue(ingranaggio.waitForExistence(timeout: 20), "l'ingranaggio sta accanto alla lente")
         ingranaggio.tap()

@@ -261,10 +261,12 @@ final class DominioTests: XCTestCase {
         func vai(_ testo: String) -> Destinazione? { URL(string: testo).flatMap { Collegamenti.interpreta($0) } }
         XCTAssertEqual(vai("schieraxi://oggi"), .sezione(.oggi))
         XCTAssertEqual(vai("schieraxi://formazione"), .sezione(.formazione))
-        XCTAssertEqual(vai("schieraxi://mercato"), .sezione(.mercato))
-        XCTAssertEqual(vai("schieraxi://scambi"), .sezione(.scambi))
-        XCTAssertEqual(vai("schieraxi://lega"), .sezione(.lega))
-        XCTAssertEqual(vai("SCHIERAXI://Lega"), .sezione(.lega), "maiuscole e minuscole non contano")
+        XCTAssertEqual(vai("schieraxi://mercato"), .sezione(.squadra), "Mercato è diventato Squadra")
+        XCTAssertEqual(vai("schieraxi://squadra"), .sezione(.squadra))
+        XCTAssertEqual(vai("schieraxi://altro"), .sezione(.altro))
+        XCTAssertEqual(vai("schieraxi://scambi"), .pagina(.scambi), "Scambi è una pagina di Altro")
+        XCTAssertEqual(vai("schieraxi://lega"), .sezione(.altro))
+        XCTAssertEqual(vai("SCHIERAXI://Lega"), .sezione(.altro), "maiuscole e minuscole non contano")
         XCTAssertEqual(vai("schieraxi://giocatore/203"), .giocatore(203))
         XCTAssertEqual(vai("schieraxi://impostazioni"), .impostazioni)
         XCTAssertNil(vai("schieraxi://giocatore/abc"))
@@ -288,9 +290,9 @@ final class DominioTests: XCTestCase {
         let memoria = try XCTUnwrap(UserDefaults(suiteName: "prova-avvio-\(UUID().uuidString)"))
         XCTAssertEqual(Navigazione.sezioneDiAvvio(memoria), .oggi, "senza scelte si parte da Oggi")
         memoria.set("scambi", forKey: "ultimaSezione")
-        XCTAssertEqual(Navigazione.sezioneDiAvvio(memoria), .scambi, "predefinito: l'ultima sezione")
+        XCTAssertEqual(Navigazione.sezioneDiAvvio(memoria), .altro, "predefinito: l'ultima sezione")
         memoria.set("mercato", forKey: "sezioneAvvio")
-        XCTAssertEqual(Navigazione.sezioneDiAvvio(memoria), .mercato, "una sezione scelta vince sull'ultima")
+        XCTAssertEqual(Navigazione.sezioneDiAvvio(memoria), .squadra, "una sezione scelta vince sull'ultima")
         memoria.set("boh", forKey: "sezioneAvvio")
         XCTAssertEqual(Navigazione.sezioneDiAvvio(memoria), .oggi)
     }
@@ -357,7 +359,7 @@ final class DaFareTests: XCTestCase {
         XCTAssertEqual(c[0].id, "dubbio-5")
         XCTAssertEqual(c[1].id, "7", "un id numerico si legge come testo")
         XCTAssertEqual(c[0].destinazione?.destinazione, .sezione(.formazione))
-        XCTAssertEqual(c[1].destinazione?.destinazione, .sezione(.lega), "senza link vale la sezione")
+        XCTAssertEqual(c[1].destinazione?.destinazione, .sezione(.altro), "senza link vale la sezione")
     }
 
     func testOrdineDiUrgenzaEVociVuote() throws {
