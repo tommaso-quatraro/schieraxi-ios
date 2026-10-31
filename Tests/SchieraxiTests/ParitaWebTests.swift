@@ -76,6 +76,18 @@ final class OreTranquilleTests: XCTestCase {
         XCTAssertFalse(corpo.contains("silenzio"), corpo)
     }
 
+    func testAvvisoRepartoScopertoSiLeggeESiRimandaSoloSeCeraNelServer() throws {
+        let nuovo = Data(#"{"cambi": true, "promemoria_60": true, "promemoria_15": true, "riepilogo": true, "copertura": false}"#.utf8)
+        var i = try JSONDecoder().decode(ImpostazioniAvvisi.self, from: nuovo)
+        XCTAssertEqual(i.copertura, false)
+        i.copertura = true
+        XCTAssertTrue(String(decoding: try JSONEncoder().encode(i), as: UTF8.self).contains(#""copertura":true"#))
+        let vecchio = Data(#"{"cambi": true, "promemoria_60": true, "promemoria_15": true, "riepilogo": true}"#.utf8)
+        let v = try JSONDecoder().decode(ImpostazioniAvvisi.self, from: vecchio)
+        XCTAssertNil(v.copertura)
+        XCTAssertFalse(String(decoding: try JSONEncoder().encode(v), as: UTF8.self).contains("copertura"))
+    }
+
     func testOreTranquilleSpenteDalServerEDecodificaTollerante() throws {
         let imp = #""impostazioni": {"cambi": true, "promemoria_60": true, "promemoria_15": true, "riepilogo": true}"#
         func stato(_ extra: String) throws -> StatoAvvisi {
