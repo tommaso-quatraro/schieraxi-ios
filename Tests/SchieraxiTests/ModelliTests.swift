@@ -18,6 +18,25 @@ final class ModelliTests: XCTestCase {
         XCTAssertEqual(o.partite?.first?.casa, "sassuolo")
     }
 
+    func testProbabiliFresche() throws {
+        func oggi(_ extra: String) throws -> Oggi {
+            try Decodifica.decodifica(Data("{\"giornata\": 9\(extra)}".utf8))
+        }
+        let a = try oggi(", \"probabili\": {\"aggiornate_il\": \"2026-10-31 13:05\", \"minuti_fa\": 130, \"eta\": \"2 ore fa\", \"testo\": \"Probabili aggiornate alle 13:05\", \"vecchie\": true, \"avviso\": \"Hanno più di 6 ore\"}")
+        XCTAssertEqual(a.probabili?.valore?.riga, "Probabili aggiornate alle 13:05 · 2 ore fa")
+        XCTAssertEqual(a.probabili?.valore?.avvisoVisibile, "Hanno più di 6 ore")
+        // non vecchie: l'avviso non si mostra anche se c'è
+        let b = try oggi(", \"probabili\": {\"testo\": \"Probabili aggiornate ieri alle 20:00\", \"vecchie\": false, \"avviso\": \"x\"}")
+        XCTAssertEqual(b.probabili?.valore?.riga, "Probabili aggiornate ieri alle 20:00")
+        XCTAssertNil(b.probabili?.valore?.avvisoVisibile)
+        // null, assente o del tipo sbagliato: niente riga e Oggi si legge lo stesso
+        XCTAssertNil(try oggi(", \"probabili\": null").probabili?.valore)
+        XCTAssertNil(try oggi("").probabili?.valore)
+        let c = try oggi(", \"probabili\": \"strano\"")
+        XCTAssertNil(c.probabili?.valore)
+        XCTAssertEqual(c.giornata, 9)
+    }
+
     func testFormazione() throws {
         let f: Formazione = try Fixture.decodifica("formazione")
         XCTAssertEqual(f.squadra, "Squadra Demo")
