@@ -103,7 +103,7 @@ final class FormazioneViewModelTests: XCTestCase {
         let atteso = try XCTUnwrap(audace.moduli.first { $0.modulo == audace.modulo })
         XCTAssertEqual(vm.vista(f).modulo, audace.modulo)
         XCTAssertEqual(vm.vista(f).punti, atteso.punteggioAtteso, accuracy: 0.001)
-        XCTAssertEqual(vm.oscillazione(f), atteso.dev)
+        XCTAssertEqual(vm.fascia(f), IntervalloPunti.frase(atteso.intervallo, dev: atteso.dev), "la fascia è quella del modulo scelto")
         // un altro modulo dello stesso stile
         let altro = try XCTUnwrap(audace.moduli.first { $0.modulo != audace.modulo })
         vm.scegliModulo(altro.modulo)
