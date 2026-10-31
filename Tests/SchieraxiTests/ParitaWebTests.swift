@@ -207,14 +207,14 @@ final class DiarioEBackupTests: XCTestCase {
         let d: DiarioRisposta = try Decodifica.decodifica(dati)
         XCTAssertEqual(d.giornate?.count, 2)
         XCTAssertEqual(d.sintesi?.puntiSchierata, 63.5)
-        XCTAssertEqual(d.giornate?.first?.differenze, "Il modello avrebbe messo Giocatore 046 al posto di Giocatore 071.")
-        XCTAssertNil(d.giornate?.last?.differenze, "senza le due formazioni non c'è un confronto")
+        XCTAssertEqual(d.giornate?.first?.confronto?.fraseCambi, "Hai cambiato 1: Giocatore 071 al posto di Giocatore 046.")
+        XCTAssertNil(d.giornate?.last?.confronto, "senza formazioni non c'è un confronto")
     }
 
     func testStessiSchieraxiDelModello() throws {
         let dati = Data(#"{"giornate": [{"giornata": 1, "consigliata": {"titolari": [{"id": 1, "nome": "A"}]}, "schierata": {"titolari": [{"id": 1, "nome": "A"}]}}]}"#.utf8)
         let d: DiarioRisposta = try Decodifica.decodifica(dati)
-        XCTAssertEqual(d.giornate?.first?.differenze, "Stessi 11 del modello.")
+        XCTAssertEqual(d.giornate?.first?.confronto?.fraseCambi, "Hai schierato gli stessi 11 consigliati.")
     }
 
     func testIlDiarioVuotoNonRompeNiente() throws {
