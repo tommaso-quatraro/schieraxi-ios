@@ -49,7 +49,7 @@ final class ScelteTueTests: XCTestCase {
         let t = try XCTUnwrap(ScelteTueTesto(s))
         XCTAssertEqual(t.righe.count, 2)
         XCTAssertEqual(t.righe[0].esito, .pari)
-        XCTAssertEqual(t.righe[0].frase, "undici diversi da quelli consigliati.")
+        XCTAssertEqual(t.righe[0].frase, "Hai scelto undici diversi da quelli consigliati.")
         XCTAssertEqual(t.righe[1].frase, "Hai messo A e B al posto di C e D.")
         XCTAssertEqual(t.percentuale, 40, "senza percentuale dal server la si calcola dai conteggi")
         XCTAssertFalse(t.pochiDati)

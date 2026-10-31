@@ -34,14 +34,14 @@ Il server e la logica stanno in `schieraxi` (`C:\Users\utente\Progetti\schieraxi
 - Ogni richiesta che non e' GET/HEAD manda `X-Fanta: 1` (il server altrimenti risponde 403). Errori: `{"detail": "..."}` gia' in italiano, mostrati cosi' come sono.
 - Account (server con `FANTA_MULTIUTENTE=1`): login con `nativo: true`, il token torna nel corpo e si manda come `Authorization: Bearer`; sta SOLO nel Keychain (mai UserDefaults, mai log). 401 = serve accesso (`ErroreApi.accessoRichiesto`), 429 con `Retry-After` = troppi tentativi.
 - Il server si aggiorna da solo su un Raspberry: aggiungere campi e' sicuro, togliere o rinominare campi rompe l'app gia' installata. Decodifica tollerante (campi nuovi opzionali). Le fixture in `Tests/Fixtures` sono dati inventati: se la struttura cambia si aggiornano a mano.
-- Ore tranquille (`silenzio`, `silenzio_da`, `silenzio_a` degli avvisi): `Domain/OreTranquille.swift`; i promemoria locali le rispettano (le ricorda in UserDefaults). Il nome e' sempre «SchieraXI» con la U maiuscola. Con «Riduci movimento»: dissolvenze e onda di opacita', mai movimenti (`Tema.molla/morbida/quieta`, `.transizione`).
+- Ore tranquille (`silenzio`, `silenzio_da`, `silenzio_a` degli avvisi): `Domain/OreTranquille.swift`; i promemoria locali le rispettano (le ricorda in UserDefaults). Il nome e' sempre «SchieraXI» con XI maiuscolo. Con «Riduci movimento»: dissolvenze e onda di opacita', mai movimenti (`Tema.molla/morbida/quieta`, `.transizione`).
 - Modifiche di contratto: farle prima lato server (retrocompatibili), poi qui.
 - Offline: l'ultima risposta di ogni schermata e' in `Caches/api` (max 150 file, per server); "Server non raggiungibile. Dati salvati del ...".
 
 ## Da NON cambiare (rompe SideStore/aggiornamenti/dati dell'utente)
 - Bundle id `it.tommaso.schieraxi` (e `it.tommaso.schieraxi.aggiorna` per il task in background, estensione widget col suo id): cambiarlo = app nuova, perso il rinnovo e l'App ID gratuito (limite 3 app, il widget ne usa uno in piu').
 - Schema URL `schieraxi://` (`oggi`, `formazione`, `mercato`, `scambi`, `lega`, `giocatore/<id>`): usato dalle notifiche ntfy con intestazione `Click`.
-- Nomi interni invariati dopo il rebranding a SchieraXI: target `Schieraxi`, `Schieraxi.ipa`, repository. Cambia solo `CFBundleDisplayName: SchieraXI`.
+- Nome SchieraXI (prima SchieraXI, poi SchieraXI): bundle id, App Group, schema, target e IPA usano lo slug `schieraxi`. Il cambio di bundle id (31/10/2026) ha reso l'app una app NUOVA per SideStore: accesso da rifare, widget da riaggiungere, la vecchia app va cancellata a mano. I formati di backup vecchi si leggono ancora (`FileBackup.formatiVecchi`, da togliere dopo 30 giorni).
 - Nomi delle icone alternative (`AppIcon-blu|viola|arancio|rosso|grafite`) in `project.yml` e nell'asset catalog: il workflow IPA controlla che siano dichiarate.
 - I target di test NON devono finire nell'IPA (controllato dal workflow). `Config/Info.plist` e' generato e ignorato da git.
 

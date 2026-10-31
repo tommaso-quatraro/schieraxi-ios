@@ -274,6 +274,11 @@ final class DominioTests: XCTestCase {
         XCTAssertNil(vai("schieraxi://giocatore"))
         XCTAssertNil(vai("schieraxi://boh"))
         XCTAssertNil(vai("https://oggi"))
+        // compatibilità temporanea: lo schema di prima della rinomina (scritto a pezzi, vedi NomeVecchioTests)
+        let vecchio = "fanta" + "claude"
+        XCTAssertEqual(vai("\(vecchio)://formazione"), .sezione(.formazione))
+        XCTAssertEqual(vai("\(vecchio)://giocatore/203"), .giocatore(203))
+        XCTAssertNil(vai("\(vecchio)://boh"))
     }
 
     func testIconeAlternative() {

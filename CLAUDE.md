@@ -5,7 +5,7 @@ Il server e la logica (modello, formazioni, scambi) stanno nell'altro repository
 **Il `README.md` è la descrizione completa** (funzioni, architettura, come si compila, cosa provare sul telefono): leggilo prima di lavorarci.
 
 ## Dove e come si lavora
-- Cartella `C:\Users\utente\Progetti\schieraxi-ios`, repository privato `tommaso-quatraro/schieraxi-ios`. Una sola copia, niente cloni doppi.
+- Cartella `C:\Users\utente\Progetti\schieraxi-ios`, repository pubblico `tommaso-quatraro/schieraxi-ios`. Una sola copia, niente cloni doppi.
 - Non c'è un Mac: si scrive qui su Windows e **GitHub Actions compila e prova su un Mac** (`macos-26`). Quello che non si può provare qui si prova lì.
 - Flusso: **issue** → **ramo** → passi piccoli → **pull request** (`Closes #N`) → workflow `Test` verde → unione (squash) → build `Compila IPA` → prova sul telefono.
   Le regole valide per tutti i progetti stanno in `~\.claude\CLAUDE.md`.

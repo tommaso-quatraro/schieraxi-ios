@@ -304,7 +304,7 @@ final class DiarioEBackupTests: XCTestCase {
     }
 }
 
-/// Il nome «SchieraXI» con la U maiuscola e il marchio sempre vivo, anche con «Ridurre movimento».
+/// Il nome «SchieraXI» con XI maiuscolo e il marchio sempre vivo, anche con «Ridurre movimento».
 final class NomeEMovimentoTests: XCTestCase {
     func testLOndaDiOpacitaRestaNelSuoIntervallo() {
         for passo in 0..<120 {
@@ -329,9 +329,9 @@ final class NomeEMovimentoTests: XCTestCase {
         var trovati: [String] = []
         for caso in elenco {
             guard let url = caso as? URL, url.pathExtension == "swift", let testo = try? String(contentsOf: url, encoding: .utf8) else { continue }
-            if testo.contains("Text(\"schieraxi\")") { trovati.append(url.lastPathComponent) }
+            if testo.contains("Text(\"schieraxi\")") || testo.contains("Text(\"Schieraxi\")") { trovati.append(url.lastPathComponent) }
         }
-        XCTAssertTrue(trovati.isEmpty, "«SchieraXI» va sempre con la U maiuscola: \(trovati)")
+        XCTAssertTrue(trovati.isEmpty, "«SchieraXI» va sempre con XI maiuscolo: \(trovati)")
     }
 }
 
