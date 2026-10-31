@@ -187,15 +187,15 @@ final class IndirizzoNonNellApp: XCTestCase {
         super.tearDown()
     }
 
-    func testSenzaIndirizzoSalvatoManca() {
+    func testSenzaIndirizzoSalvatoSiUsaIlServerPubblico() {
         UserDefaults.standard.removeObject(forKey: "indirizzo")
-        XCTAssertEqual(Config.indirizzoPredefinito, "", "nessun indirizzo predefinito dentro l'app")
-        XCTAssertTrue(IndirizzoServer.manca)
-        XCTAssertEqual(IndirizzoServer.attuale, "")
+        XCTAssertEqual(Config.indirizzoPredefinito, "https://app.schieraxi.it")
+        XCTAssertFalse(IndirizzoServer.manca, "l'indirizzo non si chiede più all'utente")
+        XCTAssertEqual(IndirizzoServer.attuale, "https://app.schieraxi.it")
         UserDefaults.standard.set("   ", forKey: "indirizzo")
-        XCTAssertTrue(IndirizzoServer.manca)
+        XCTAssertEqual(IndirizzoServer.attuale, "https://app.schieraxi.it")
         UserDefaults.standard.set("http://non-valido.invalid", forKey: "indirizzo")
-        XCTAssertTrue(IndirizzoServer.manca, "un indirizzo non ammesso vale come mancante")
+        XCTAssertEqual(IndirizzoServer.attuale, "https://app.schieraxi.it", "un indirizzo non ammesso vale come mancante")
     }
 
     func testUnIndirizzoGiaSalvatoSiMantieneDopoLAggiornamento() {
@@ -203,19 +203,6 @@ final class IndirizzoNonNellApp: XCTestCase {
         UserDefaults.standard.set("https://gia-salvato.invalid:8443/", forKey: "indirizzo")
         XCTAssertFalse(IndirizzoServer.manca)
         XCTAssertEqual(IndirizzoServer.attuale, "https://gia-salvato.invalid:8443")
-    }
-
-    func testSenzaIndirizzoLeRichiesteDannoUnMessaggioChiaro() async {
-        UserDefaults.standard.removeObject(forKey: "indirizzo")
-        do {
-            _ = try await ServerHTTP().grezzo("/api/oggi")
-            XCTFail("doveva lanciare")
-        } catch let e as ErroreApi {
-            guard case .indirizzoNonValido = e else { return XCTFail("errore sbagliato: \(e)") }
-            XCTAssertTrue((e.errorDescription ?? "").contains("Manca l'indirizzo"), e.errorDescription ?? "")
-        } catch {
-            XCTFail("errore sbagliato: \(error)")
-        }
     }
 
     func testNelleInfoDellAppNonCeNessunIndirizzo() {

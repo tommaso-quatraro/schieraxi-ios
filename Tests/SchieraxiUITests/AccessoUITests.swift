@@ -30,12 +30,13 @@ final class AccessoUITests: XCTestCase {
         XCTAssertTrue(entra.exists)
         XCTAssertFalse(entra.isEnabled, "con i campi vuoti non si può entrare")
 
-        // Registrati: compare il codice d'invito
+        // Registrati: compare il codice d'invito (il server non si vede: è nascosto nell'area avanzata)
         app.buttons["Registrati"].tap()
         attendi("Codice d'invito", contiene: true)
         XCTAssertTrue(app.buttons["Crea l'account"].exists)
         // Recupera: compare il codice di recupero
-        app.buttons["Recupera"].tap()
+        app.buttons["Accedi"].tap()
+        app.buttons["Password dimenticata?"].tap()
         XCTAssertTrue(app.textFields["Codice di recupero"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Cambia la password"].exists)
 
@@ -111,7 +112,8 @@ final class AccessoUITests: XCTestCase {
         // Il pulsante si cerca ogni volta, così un tocco su una schermata che si sta ancora montando non resta appeso.
         let arrivi: [(tocco: String, atteso: String)] = [
             ("Registrati", "Crea l'account"),
-            ("Recupera", "Cambia la password"),
+            ("Accedi", "Entra"),
+            ("Password dimenticata?", "Cambia la password"),
             ("Accedi", "Entra"),
         ]
         for giro in 1...6 {
