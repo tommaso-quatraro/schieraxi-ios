@@ -4,10 +4,8 @@ import SwiftUI
 
 /// Gli avatar illustrati devono dare GLI STESSI indici di web e Android (vettori di docs/AVATAR.md).
 final class GeneratoreVoltoTests: XCTestCase {
-    private func indici(_ v: [Int]) -> IndiciVolto {
-        IndiciVolto(pelle: v[0], forma: v[1], acconciatura: v[2], colore: v[3], barba: v[4],
-                    sopracciglia: v[5], occhi: v[6], bocca: v[7], accessorio: v[8], orecchie: v[9])
-    }
+    /// Le dieci parti della versione 1 (le nove della versione 3 si provano a parte, con `VETTORE3`).
+    private func indici(_ v: [Int]) -> [Int] { v }
 
     func testIVettoriDellaSpecifica() {
         let vettori: [Int: [Int]] = [
@@ -19,16 +17,16 @@ final class GeneratoreVoltoTests: XCTestCase {
             7627: [0, 0, 4, 1, 2, 1, 2, 0, 0, 0],
         ]
         for (id, atteso) in vettori {
-            XCTAssertEqual(GeneratoreVolto.estrai(id: id), indici(atteso), "id \(id)")
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id).elenco, indici(atteso), "id \(id)")
         }
     }
 
     func testLeRegoleDiCoerenza() {
         // 140: orecchino (2) con acconciatura lunga (4) -> nessun accessorio; 170: fascia (1) con cresta (7) -> nessuno
-        XCTAssertEqual(GeneratoreVolto.estraiGrezzo(id: 140), indici([3, 2, 4, 3, 1, 2, 0, 1, 2, 1]))
-        XCTAssertEqual(GeneratoreVolto.estrai(id: 140), indici([3, 2, 4, 3, 1, 2, 0, 1, 0, 1]))
-        XCTAssertEqual(GeneratoreVolto.estraiGrezzo(id: 170), indici([2, 2, 7, 7, 1, 1, 0, 1, 1, 0]))
-        XCTAssertEqual(GeneratoreVolto.estrai(id: 170), indici([2, 2, 7, 7, 1, 1, 0, 1, 0, 0]))
+        XCTAssertEqual(GeneratoreVolto.estraiGrezzo(id: 140).elenco, indici([3, 2, 4, 3, 1, 2, 0, 1, 2, 1]))
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 140).elenco, indici([3, 2, 4, 3, 1, 2, 0, 1, 0, 1]))
+        XCTAssertEqual(GeneratoreVolto.estraiGrezzo(id: 170).elenco, indici([2, 2, 7, 7, 1, 1, 0, 1, 1, 0]))
+        XCTAssertEqual(GeneratoreVolto.estrai(id: 170).elenco, indici([2, 2, 7, 7, 1, 1, 0, 1, 0, 0]))
     }
 
     func testMulberry32() {
@@ -48,10 +46,35 @@ final class GeneratoreVoltoTests: XCTestCase {
         XCTAssertEqual(GeneratoreVolto.estrai(id: 4_294_967_295), GeneratoreVolto.estrai(id: 4_294_967_295), "il massimo è valido")
     }
 
+    func testIVettoriDellaVersione3() {
+        // docs/AVATAR.md, sezione 9: espressione, ritocco capelli, guance, rughe, naso, sfondo, maglia, colletto, spalle
+        let vettori: [Int: [Int]] = [
+            1: [2, 1, 0, 0, 1, 2, 3, 2, 0],
+            2: [2, 2, 0, 0, 2, 3, 0, 0, 0],
+            3: [0, 1, 1, 0, 1, 2, 1, 1, 0],
+            100: [0, 1, 0, 0, 1, 2, 0, 0, 1],
+            4567: [0, 0, 0, 0, 2, 3, 0, 0, 0],
+            7627: [1, 2, 0, 0, 0, 0, 3, 0, 1],
+        ]
+        for (id, atteso) in vettori {
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id).elenco3, atteso, "id \(id)")
+        }
+    }
+
+    func testITrattiNonToccanoLeNoveEstrazioniDellaVersione3() {
+        let tratti = TrattiVolto(c: 5, a: "C", b: 1)
+        for id in [1, 2, 3, 100, 4567, 7627] {
+            XCTAssertEqual(GeneratoreVolto.estrai(id: id, tratti: tratti).elenco3, GeneratoreVolto.estrai(id: id).elenco3, "id \(id)")
+        }
+    }
+
     func testIPesiFannoCento() {
         for pesi in [GeneratoreVolto.pesiPelle, GeneratoreVolto.pesiForma, GeneratoreVolto.pesiAcconciatura, GeneratoreVolto.pesiColore,
                      GeneratoreVolto.pesiBarba, GeneratoreVolto.pesiSopracciglia, GeneratoreVolto.pesiOcchi, GeneratoreVolto.pesiBocca,
-                     GeneratoreVolto.pesiAccessorio, GeneratoreVolto.pesiOrecchie] {
+                     GeneratoreVolto.pesiAccessorio, GeneratoreVolto.pesiOrecchie,
+                     GeneratoreVolto.pesiEspressione, GeneratoreVolto.pesiRitocco, GeneratoreVolto.pesiGuance, GeneratoreVolto.pesiRughe,
+                     GeneratoreVolto.pesiNaso, GeneratoreVolto.pesiSfondo, GeneratoreVolto.pesiMaglia, GeneratoreVolto.pesiColletto,
+                     GeneratoreVolto.pesiSpalle] {
             XCTAssertEqual(pesi.reduce(0, +), 100)
         }
     }
@@ -103,7 +126,18 @@ final class DisegnoVoltoTests: XCTestCase {
             let campo = DisegnoVolto.elementi(id: id, portiere: false, c1: c1, c2: c2)
             let portiere = DisegnoVolto.elementi(id: id, portiere: true, c1: c1, c2: c2)
             XCTAssertGreaterThan(campo.count, 8, "id \(id)")
-            XCTAssertEqual(portiere.count, campo.count + 4, "due guanti con due linee ciascuno? (id \(id))")
+            // il portiere ha sempre la maglia grigia senza disegno: i due guanti (4 forme) sostituiscono il disegno della maglia
+            let disegnoMaglia: Int = [0, 5, 1, 1][GeneratoreVolto.estrai(id: id).maglia]
+            XCTAssertEqual(portiere.count, campo.count + 4 - disegnoMaglia, "due guanti con due linee ciascuno (id \(id))")
+        }
+    }
+
+    func testIlNumeroDiMagliaSiDisegnaSoloTra1E99() {
+        let c1 = RGB8("#0a58a8"), c2 = RGB8("#111827")
+        let base = DisegnoVolto.elementi(id: 5, portiere: false, c1: c1, c2: c2).count
+        XCTAssertEqual(DisegnoVolto.elementi(id: 5, portiere: false, c1: c1, c2: c2, numero: 10).count, base + 1)
+        for fuori in [0, 100, -3] {
+            XCTAssertEqual(DisegnoVolto.elementi(id: 5, portiere: false, c1: c1, c2: c2, numero: fuori).count, base)
         }
     }
 
@@ -136,12 +170,13 @@ final class AvatarVersione2Tests: XCTestCase {
     }
 
     func testIVettoriDellaVersione2() {
-        XCTAssertEqual(elenco(1, #"{"p":0,"c":3,"a":"L","b":1}"#), [0, 0, 4, 3, 3, 1, 0, 1, 0, 1])
-        XCTAssertEqual(elenco(2, #"{"p":6,"c":0,"a":"R","b":0}"#), [6, 0, 0, 0, 0, 0, 0, 1, 0, 0])
+        XCTAssertEqual(elenco(1, #"{"c":3,"a":"L","b":1}"#), [5, 0, 4, 3, 3, 1, 0, 1, 0, 1])
+        XCTAssertEqual(elenco(2, #"{"c":0,"a":"R","b":0}"#), [3, 0, 0, 0, 0, 0, 0, 1, 0, 0])
         XCTAssertEqual(elenco(3, #"{"c":5,"a":"C","b":1}"#), [0, 2, 7, 5, 4, 0, 0, 0, 0, 0])
         XCTAssertEqual(elenco(100, #"{"a":"I","b":1}"#), [1, 2, 2, 7, 3, 0, 1, 0, 1, 1])
-        XCTAssertEqual(elenco(4567, #"{"p":2}"#), [2, 0, 0, 7, 0, 2, 2, 0, 0, 0])
-        XCTAssertEqual(elenco(7627, #"{"p":9,"a":"X"}"#), [0, 0, 4, 1, 2, 1, 2, 0, 0, 0], "campi non validi: come senza tratti")
+        XCTAssertEqual(elenco(5, #"{"p":6}"#), elenco(5, nil), "una carnagione ricevuta si ignora: la pelle viene dal seme")
+        XCTAssertEqual(elenco(4567, #"{"c":6}"#), [2, 0, 0, 6, 0, 2, 2, 0, 0, 0])
+        XCTAssertEqual(elenco(7627, #"{"c":9,"a":"X"}"#), [0, 0, 4, 1, 2, 1, 2, 0, 0, 0], "campi non validi: come senza tratti")
     }
 
     func testSenzaTrattiEIdenticaAllaVersione1() {
@@ -157,17 +192,18 @@ final class AvatarVersione2Tests: XCTestCase {
     }
 
     func testITrattiSiLeggonoConTolleranza() {
-        XCTAssertEqual(tratti(#"{"p": "ciao", "c": 3}"#), TrattiVolto(p: nil, c: 3, a: nil, b: nil))
-        XCTAssertEqual(tratti(#"{"a": 5, "b": 1}"#), TrattiVolto(p: nil, c: nil, a: nil, b: 1))
+        XCTAssertEqual(tratti(#"{"c": "ciao", "b": 1}"#), TrattiVolto(c: nil, a: nil, b: 1))
+        XCTAssertEqual(tratti(#"{"a": 5, "b": 1}"#), TrattiVolto(c: nil, a: nil, b: 1))
+        XCTAssertEqual(tratti(#"{"p": 5, "c": 3}"#), TrattiVolto(c: 3), "la carnagione del server si ignora")
         XCTAssertEqual(tratti("{}"), TrattiVolto())
     }
 
     func testIlDepositoLeggeLaRispostaDelServer() {
-        let corpo = #"{"versione": 2, "tratti": {"1": {"p": 0, "c": 3, "a": "L", "b": 1}, "2": {"p": 6}, "xx": {"p": 1}, "3": "rotto", "-5": {"p": 1}}}"#
+        let corpo = #"{"versione": 2, "tratti": {"1": {"c": 3, "a": "L", "b": 1}, "2": {"c": 6}, "xx": {"c": 1}, "3": "rotto", "-5": {"c": 1}}}"#
         let m = DepositoTratti.leggi(Data(corpo.utf8))
         XCTAssertEqual(m?.count, 2, "le voci rotte si saltano, le altre restano")
-        XCTAssertEqual(m?[1], TrattiVolto(p: 0, c: 3, a: "L", b: 1))
-        XCTAssertEqual(m?[2]?.p, 6)
+        XCTAssertEqual(m?[1], TrattiVolto(c: 3, a: "L", b: 1))
+        XCTAssertEqual(m?[2]?.c, 6)
         XCTAssertNil(DepositoTratti.leggi(Data("[]".utf8)))
         XCTAssertNil(DepositoTratti.leggi(Data()))
         XCTAssertNil(DepositoTratti.leggi(Data(#"{"versione": 2}"#.utf8)))
@@ -178,7 +214,7 @@ final class AvatarVersione2Tests: XCTestCase {
         try FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: cartella) }
         let s = ServerDiProva { _, percorso, _ in
-            if percorso == "/api/avatar" { return Data(#"{"versione": 2, "tratti": {"4567": {"p": 5}}}"#.utf8) }
+            if percorso == "/api/avatar" { return Data(#"{"versione": 2, "tratti": {"4567": {"c": 5}}}"#.utf8) }
             throw ErroreApi.server("niente")
         }
         let d = DepositoTratti(cartella: cartella)
@@ -186,11 +222,11 @@ final class AvatarVersione2Tests: XCTestCase {
         await d.caricaSeServe(server: s)
         await d.caricaSeServe(server: s)
         XCTAssertEqual(s.quante("/api/avatar"), 1, "una volta sola per apertura")
-        XCTAssertEqual(d.tratti(per: 4567)?.p, 5)
+        XCTAssertEqual(d.tratti(per: 4567)?.c, 5)
         XCTAssertEqual(d.versione, 1)
         // al riavvio i tratti ci sono già (disco)
         let dopo = DepositoTratti(cartella: cartella)
-        XCTAssertEqual(dopo.tratti(per: 4567)?.p, 5)
+        XCTAssertEqual(dopo.tratti(per: 4567)?.c, 5)
     }
 
     func testUnErroreDelServerNonRompeEPoiRiprova() async throws {

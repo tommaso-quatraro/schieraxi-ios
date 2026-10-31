@@ -7,7 +7,7 @@ final class WidgetRiassuntoTests: XCTestCase {
     {"giornata": 11, "prima_partita": "2026-10-31 18:30", "scadenza": "2026-10-31 18:30", "ore_mancanti": 5.5, "iniziata": false, "con_probabili": true,
      "squadra": "Schiera FC", "crediti_residui": 12,
      "formazione": {"modulo": "3-4-3", "punti_attesi": 73.7,
-       "titolari": [{"id": 1, "nome": "Giocatore 096", "ruolo": "P", "punti_attesi": 6.1, "p_voto": 0.98, "avatar": {"p": 2, "b": 1}},
+       "titolari": [{"id": 1, "nome": "Giocatore 096", "ruolo": "P", "punti_attesi": 6.1, "p_voto": 0.98, "avatar": {"c": 2, "b": 1}},
                     {"id": 2, "nome": "Giocatore 002", "ruolo": "D", "punti_attesi": 6.4, "p_voto": 0.96}],
        "panchina": [10, 11, 12]},
      "avvisi": [{"id": 5, "nome": "Giocatore 044", "ruolo": "A", "tipo": "dubbio", "in_formazione": true, "p_voto": 0.55},
@@ -34,7 +34,7 @@ final class WidgetRiassuntoTests: XCTestCase {
         XCTAssertEqual(w.giornata, 11)
         XCTAssertEqual(w.formazione?.modulo, "3-4-3")
         XCTAssertEqual(w.formazione?.titolari?.count, 2)
-        XCTAssertEqual(w.formazione?.titolari?.first?.avatar?.p, 2, "i tratti del volto arrivano col giocatore")
+        XCTAssertEqual(w.formazione?.titolari?.first?.avatar?.c, 2, "i tratti del volto arrivano col giocatore")
         XCTAssertEqual(w.creditiResidui, 12)
         XCTAssertEqual(w.diario?.count, 2)
         XCTAssertEqual(w.diario?.first?.fatti, 63.5)
