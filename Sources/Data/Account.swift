@@ -361,11 +361,13 @@ final class SessioneAccount: ObservableObject {
             let r: RispostaAccount = try await server.get("/api/account/me")
             if r.multiutente == true {
                 if let u = r.utente {
-                    email = r.email
-                    emailInAttesa = r.emailInAttesa
-                    emailOrigine = r.emailOrigine
+                    // si scrive solo ciò che cambia: ogni scrittura ridisegna le schermate che guardano l'account
+                    if email != r.email { email = r.email }
+                    if emailInAttesa != r.emailInAttesa { emailInAttesa = r.emailInAttesa }
+                    if emailOrigine != r.emailOrigine { emailOrigine = r.emailOrigine }
                     ServiziSociali.salva(ServiziSociali.pulisci(r.social), in: memoria)
-                    accessi = ServiziSociali.googleAcceso(in: memoria) ? r.accessi : nil
+                    let nuoviAccessi = ServiziSociali.googleAcceso(in: memoria) ? r.accessi : nil
+                    if accessi != nuoviAccessi { accessi = nuoviAccessi }
                     imposta(.connesso(u))
                     // il widget ha il suo token a scopo limitato (mai quello della sessione)
                     let s = server
@@ -700,7 +702,7 @@ final class SessioneAccount: ObservableObject {
     /// Rilegge come si entra in questo account (solo con Google acceso). Se il server non risponde si resta com'è.
     func aggiornaAccessi() async {
         if Demo.accesso != nil || ProvaEsempio.attiva || !ServiziSociali.googleAcceso(in: memoria) { return }
-        if let a: AccessiAccount = try? await server.get("/api/account/social/accessi") { accessi = a }
+        if let a: AccessiAccount = try? await server.get("/api/account/social/accessi"), a != accessi { accessi = a }
     }
 
     /// Per chi è entrato solo con Google: aggiunge una password (dopo la riconferma). Il codice di recupero nuovo compare a schermo intero.
