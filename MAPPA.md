@@ -1,6 +1,6 @@
 # MAPPA: SchieraXI per iPhone/iPad, repository `schieraxi-ios`
 
-Leggi prima `CLAUDE.md` e, per le funzioni, `README.md` (lungo: cerca con Grep, non leggerlo tutto). Ultimo aggiornamento: 30/10/2026.
+Leggi prima `CLAUDE.md` e, per le funzioni, `README.md` (lungo: cerca con Grep, non leggerlo tutto). Ultimo aggiornamento: 1/11/2026.
 Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con i contratti delle API). Qui c'e' solo l'app SwiftUI.
 
 ## Comandi
@@ -42,7 +42,7 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 - Bundle id `it.schieraxi.app` (dal 1/11/2026, prima `it.tommaso.schieraxi`; e `it.schieraxi.app.aggiorna` per il task in background, estensione widget col suo id): cambiarlo = app nuova, perso il rinnovo e l'App ID gratuito (limite 3 app, il widget ne usa uno in piu').
 - Schema URL `schieraxi://` (`oggi`, `formazione`, `mercato`, `scambi`, `lega`, `giocatore/<id>`, e `social?codice=...` / `social?errore=...` che riceve solo la finestra di accesso con Google): usato dalle notifiche ntfy con intestazione `Click`.
 - Bundle id, App Group, schema, target e IPA usano lo slug `schieraxi`. Il cambio di bundle id (31/10/2026) ha reso l'app una app NUOVA per SideStore: accesso da rifare, widget da riaggiungere, la vecchia app va cancellata a mano. Nessuna compatibilita' con i nomi di prima: schemi e formati di copia di sicurezza vecchi non si leggono piu' (controllo in `NomeVecchioTests`).
-- Nomi delle icone alternative (`AppIcon-blu|viola|arancio|rosso|grafite`) in `project.yml` e nell'asset catalog: il workflow IPA controlla che siano dichiarate.
+- Una sola icona (`AppIcon`): dal 1/11/2026 niente icone alternative; il workflow IPA controlla che nell'Info.plist non ce ne siano.
 - I target di test NON devono finire nell'IPA (controllato dal workflow). `Config/Info.plist` e' generato e ignorato da git.
 
 ## Punti delicati
@@ -52,6 +52,11 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 - Se SideStore protesta per i limiti, si toglie il target `SchieraxiWidget` e la riga `dependencies` da `project.yml`.
 - Modalita' demo: argomento di lancio `-DEMO` (+ `-DEMO_SCHERMATA`, `-DEMO_FONDO`, `-DEMO_ORIENTAMENTO`, `-DEMO_CERCA`); in demo l'indirizzo vero non compare e il Keychain non si usa. I test UI e gli screenshot dipendono da questo: non romperlo.
 - Concorrenza dei workflow: ogni workflow ha il gruppo `workflow + ramo` e annulla la corsa vecchia; su `main` `ipa.yml` NON annulla la build in corso (può essere la release). `ipa.yml` ha bisogno di `contents: write` per la release.
+
+## Impostazioni e Altro (ripulite il 1/11/2026)
+- Impostazioni (`Presentation/Lega/ImpostazioniView.swift`): Il tuo account (`AccountSezione`: un solo nome, email di Google se manca quella dell'account, `Domain/ProfiloAccount.swift`), Accessi, App (Aspetto: tema e animazioni; Avvisi), Informazioni (privacy, termini, licenze, versione), Avanzate (solo chi amministra; il widget si collega da solo tramite App Group e token `fw_`: nessun codice da copiare, resta solo la diagnostica), Esci (`EsciSezione`).
+- Altro (`LegaView`, `ambito: .altro`): Scambi, Diario, Asta, Regole, Movimenti, Crediti, Nuova stagione, Novità. Ogni voce in un posto solo; niente pallino sulle schede (le novità le annuncia la riga di Oggi).
+- Tolti: «Sotto il cofano», copia di sicurezza nell'interfaccia (schermata e logica di invio tolte; il «Da fare» `backup` non si mostra), icone alternative, colore/densità/sezione iniziale (`OpzioniTolte` toglie le scelte vecchie all'avvio), maiuscole del nome, esci da tutti i telefoni.
 
 ## Accesso con Google (1/11/2026)
 - Il giro lo fa il SERVER; l'app apre nel browser di sistema (`ASWebAuthenticationSession`, `Support/AvvioWeb.swift`, niente SDK di Google) l'indirizzo di `POST /api/account/social/google/inizia`, riceve `schieraxi://social?codice=...` e lo riscatta con `POST .../social/scambio` (codice monouso di 60 secondi + verificatore PKCE, che resta solo in memoria). Nessun identificativo di Google nel codice.

@@ -103,9 +103,12 @@ final class FumoUITests: XCTestCase {
     func testAltroConLeSuePagine() {
         vaiA("Altro")
         attendi("Scambi", contiene: true)
-        for voce in ["Scambi", "Movimenti e storico", "Asta e riparazione", "Regole", "Diario delle giornate"] {
+        for voce in ["Scambi", "Movimenti e storico", "Asta e riparazione", "Regole", "Diario delle giornate", "Novità"] {
             attendiScorrendo(voce, contiene: true)
         }
+        // ogni voce in un posto solo: niente copia di sicurezza, niente rimando alle Impostazioni (c'è l'ingranaggio)
+        XCTAssertFalse(elemento("Copia di sicurezza", contiene: true).exists)
+        XCTAssertFalse(elemento("Impostazioni dell'app e dell'account").exists)
     }
 
     func testImpostazioniDallIngranaggio() {
@@ -113,12 +116,16 @@ final class FumoUITests: XCTestCase {
         let ingranaggio = app.buttons["Impostazioni"]
         XCTAssertTrue(ingranaggio.waitForExistence(timeout: 20), "l'ingranaggio sta accanto alla lente")
         ingranaggio.tap()
-        for voce in ["Tema, colore e densità", "Icona dell'app"] {
-            attendiScorrendo(voce, contiene: true)
+        attendi("Aspetto")
+        attendi("Avvisi e promemoria")
+        // le voci tolte non ci sono più
+        for tolta in ["Icona dell'app", "Sotto il cofano", "Copia di sicurezza", "Configurazione guidata", "Copia il codice per il widget"] {
+            XCTAssertFalse(elemento(tolta, contiene: true).exists, "«\(tolta)» non deve stare nelle Impostazioni")
         }
-        elemento("Tema, colore e densità").tap()
-        attendi("Colore principale")
+        elemento("Aspetto").tap()
+        attendi("Automatico")
         attendiScorrendo("Animazioni ridotte", contiene: true)
+        XCTAssertFalse(elemento("Colore principale").exists, "l'aspetto ha solo tema e animazioni")
     }
 
     func testSchedaDiUnGiocatoreSiApreEDiChiude() {

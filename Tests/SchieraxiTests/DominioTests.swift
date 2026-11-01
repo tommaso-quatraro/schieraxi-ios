@@ -279,15 +279,6 @@ final class DominioTests: XCTestCase {
         XCTAssertNil(vai("titolar" + "xi://formazione"))
     }
 
-    func testIconeAlternative() {
-        XCTAssertNil(IconeApp.nomePerIOS("verde"), "il verde è l'icona normale")
-        XCTAssertEqual(IconeApp.nomePerIOS("blu"), "AppIcon-blu")
-        XCTAssertEqual(IconeApp.scelta(da: nil), "verde")
-        XCTAssertEqual(IconeApp.scelta(da: "AppIcon-rosso"), "rosso")
-        XCTAssertEqual(IconeApp.scelta(da: "AppIcon-sconosciuta"), "verde")
-        XCTAssertEqual(IconeApp.nomi.count, 6)
-    }
-
     @MainActor
     func testSezioneDiAvvio() throws {
         let memoria = try XCTUnwrap(UserDefaults(suiteName: "prova-avvio-\(UUID().uuidString)"))

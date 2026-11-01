@@ -77,15 +77,6 @@ enum RegoleAccount {
         testo.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
-    /// Cambiare le maiuscole del nome: il nome per accedere resta lo stesso (cambiano solo maiuscole e minuscole).
-    /// nil se va bene, altrimenti cosa non va.
-    static func problemaMaiuscole(_ nuovo: String, nomeUtente: String) -> String? {
-        let pulito = nuovo.trimmingCharacters(in: .whitespacesAndNewlines)
-        if pulito.isEmpty { return "Scrivi il nome." }
-        if pulito.lowercased() != nomeUtente.lowercased() { return "Si possono cambiare solo le maiuscole: le lettere devono restare le stesse." }
-        return nil
-    }
-
     /// Controllo leggero di un indirizzo email (l'ultima parola è del server).
     static func problemaEmail(_ testo: String) -> String? {
         let t = testo.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -166,10 +157,6 @@ private struct CorpoSoloPassword: Encodable {
     let password: String
 }
 
-private struct CorpoNomeUtente: Encodable {
-    let nomeUtente: String
-    enum CodingKeys: String, CodingKey { case nomeUtente = "nome_utente" }
-}
 
 private struct CorpoEmail: Encodable {
     let email: String
@@ -552,15 +539,6 @@ final class SessioneAccount: ObservableObject {
         chiudiLocale()
     }
 
-    /// Chiude le sessioni di tutti i dispositivi (compreso questo).
-    func esciDaTutti() async throws {
-        try inizia()
-        defer { inCorso = false }
-        await TokenWidget.revoca(server: server)
-        _ = try await server.corpoJSON("POST", "/api/account/esci-da-tutti", [String: String]())
-        chiudiLocale()
-    }
-
     func cambiaPassword(attuale: String, nuova: String) async throws {
         try inizia()
         defer { inCorso = false }
@@ -574,17 +552,6 @@ final class SessioneAccount: ObservableObject {
         let r: RispostaAccount = try await conTraduzione { try await server.posta("POST", "/api/account/codice-recupero", CorpoSoloPassword(password: password)) }
         guard let codice = r.codiceRecupero, Accesso.codiceRecuperoValido(codice) else { throw Errore.rispostaNonValida }
         return codice
-    }
-
-    /// Cambia le maiuscole del nome (il nome per accedere non cambia).
-    func cambiaMaiuscole(_ nuovo: String) async throws {
-        try inizia()
-        defer { inCorso = false }
-        let r: RispostaAccount = try await conTraduzione {
-            try await server.posta("PUT", "/api/account/nome", CorpoNomeUtente(nomeUtente: nuovo.trimmingCharacters(in: .whitespacesAndNewlines)))
-        }
-        guard let u = r.utente, u.nomeUtente.count <= 100 else { throw Errore.serverNonValido }
-        imposta(.connesso(u))
     }
 
     /// Chiede al server di verificare un indirizzo email: arriva un codice a quell'indirizzo. La risposta è sempre la stessa.
@@ -623,6 +590,14 @@ final class SessioneAccount: ObservableObject {
 
     /// Entra solo con Google: non ha una password. Per le azioni delicate il server chiede una riconferma con Google, non la password.
     var senzaPassword: Bool { accessi?.soloGoogle ?? false }
+
+    /// Google è collegato a questo account (solo se il server ha Google acceso e ce l'ha detto).
+    var googleCollegato: Bool { accessi?.google != nil }
+
+    /// L'email da mostrare in «Il tuo account»: quella dell'account o, se manca, quella di Google.
+    var emailMostrata: String? {
+        ProfiloAccount.email(account: email, inAttesa: emailInAttesa, google: accessi?.google?.email)
+    }
 
     /// Il campo password delle azioni delicate: chi non ha una password manda un segnaposto (il server guarda la riconferma recente).
     private func passwordPerServer(_ scritta: String) -> String { senzaPassword ? "google" : scritta }

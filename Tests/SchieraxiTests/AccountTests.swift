@@ -423,14 +423,8 @@ final class SessioneAccountTests: XCTestCase {
         XCTAssertNil(archivio.leggi(server: server.indirizzo))
     }
 
-    func testEsciDaTuttiEEliminaChiudonoAncheQuestoTelefono() async throws {
+    func testEliminaChiudeAncheQuestoTelefono() async throws {
         let server = serverAccount()
-        archivio.salva("tok", server: server.indirizzo)
-        let s = sessione(server)
-        try await s.esciDaTutti()
-        XCTAssertEqual(server.quante("/api/account/esci-da-tutti"), 1)
-        XCTAssertEqual(s.stato, .daAccedere)
-
         archivio.salva("tok", server: server.indirizzo)
         let t = sessione(server)
         try await t.elimina(password: "Prova-Finta-Zero")
@@ -531,12 +525,6 @@ final class UscitaCancellaLeCopieDiIosTests: XCTestCase {
         DatiLocali.svuota()
         for _ in 0..<100 where URLCache.shared.cachedResponse(for: richiesta) != nil { try await Task.sleep(nanoseconds: 20_000_000) }
         XCTAssertNil(URLCache.shared.cachedResponse(for: richiesta))
-    }
-
-    func testSottoIlCofanoVaConLaFunzioneDelServer() {
-        XCTAssertEqual(Funzione.sottoIlCofano, "sotto_il_cofano")
-        XCTAssertFalse(StatoFunzioni(scelte: [Funzione.sottoIlCofano: false]).acceso(Funzione.sottoIlCofano))
-        XCTAssertTrue(StatoFunzioni(scelte: [Funzione.sottoIlCofano: true]).acceso(Funzione.sottoIlCofano))
     }
 }
 

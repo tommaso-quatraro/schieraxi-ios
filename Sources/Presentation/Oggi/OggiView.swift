@@ -62,6 +62,10 @@ struct OggiView: View {
             .navigationTitle("Oggi")
             .ricercaGlobale()
             .task { await vm.carica() }
+            // Prima installazione (o dopo l'uscita dall'account): non c'è niente di «nuovo» da vedere, si segna la versione attuale senza riga.
+            .onChange(of: vm.info.dato?.versione, initial: true) { _, v in
+                if novitaVista.isEmpty, let v, !v.isEmpty, v != "?" { novitaVista = v }
+            }
             // Risultati in diretta: solo con la schermata visibile e l'app in primo piano (il lavoro si annulla da solo quando
             // la schermata sparisce) e riparte quando arriva la giornata o cambia.
             .task(id: "\(fase == .active)-\(vm.oggi?.giornata ?? 0)-\(funzioni.acceso(Funzione.live))") {
