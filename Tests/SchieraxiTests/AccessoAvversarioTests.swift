@@ -201,6 +201,33 @@ final class ServerHTTPOstileTests: XCTestCase {
         XCTAssertEqual(Set(impronte.valore ?? []), ["token-di-oggi".hashValue], "l'avviso dice quale token ha fallito, non il token")
     }
 
+    func testUnQuattrocentoUnoDiUnProxyNonChiudeLaSessione() async throws {
+        archivio.salva("token-di-oggi", server: "https://prova-ostile.invalid")
+        let corpi = ["<html><body>Accedi al Wi-Fi</body></html>", "{\"errore\": \"x\"}", "{\"detail\": 5}", ""]
+        let avvisi = Scatola<Int>()
+        avvisi.valore = 0
+        let osservatore = NotificationCenter.default.addObserver(forName: .accessoRichiesto, object: nil, queue: .main) { _ in
+            avvisi.valore = (avvisi.valore ?? 0) + 1
+        }
+        defer { NotificationCenter.default.removeObserver(osservatore) }
+        for corpo in corpi {
+            ProtocolloFinto.gestore = { [unowned self] r in (risposta(r, 401), Data(corpo.utf8)) }
+            do { _ = try await server.grezzo("/api/oggi"); XCTFail() } catch {
+                XCTAssertTrue(error.localizedDescription.contains("401"), "dice il codice, non \u{ab}sessione finita\u{bb}")
+            }
+        }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(avvisi.valore, 0)
+        XCTAssertEqual(archivio.leggi(server: "https://prova-ostile.invalid"), "token-di-oggi")
+    }
+
+    func testUnQuattrocentoTreSenzaJsonDiceCheLaRichiestaERifiutata() {
+        let testo = ErroreApi.risposta(403).localizedDescription
+        XCTAssertTrue(testo.contains("rifiutato"))
+        XCTAssertFalse(testo.contains("ha un problema"))
+        XCTAssertTrue(ErroreApi.risposta(502).localizedDescription.contains("ha un problema"))
+    }
+
     func testIlRetryAfterNonNumericoNonFaCrash() async throws {
         for valore in ["abc", "-5", "99999999999999999999", "", " 7 "] {
             ProtocolloFinto.gestore = { [unowned self] r in (risposta(r, 429, ["Retry-After": valore]), Data("{\"detail\": \"Calma\"}".utf8)) }

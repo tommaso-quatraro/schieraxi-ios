@@ -20,7 +20,7 @@ Il server e la logica (modello, formazioni, scambi) stanno nell'altro repository
 - **Il repository è PUBBLICO, di proposito**: così GitHub Actions su macOS compila gratis e SideStore scarica gli aggiornamenti. Deciso il 29/10/2026: le fixture sono dati INVENTATI (squadre e giocatori fittizi, dal 31/10/2026): mai copiare risposte di una lega vera. Niente password, chiavi, indirizzi o dati personali veri (vedi "Chiavi e segreti").
 
 ## Chiavi e segreti
-**Mai in git**: firme, certificati, profili, password, Apple ID. L'indirizzo del server NON sta nel repository né nell'IPA (entrambi pubblici): si scrive nell'app al primo avvio (e in Lega > Server) e resta sul telefono. Il widget lo ha nelle sue impostazioni (Modifica widget). Il workflow IPA fallisce se trova `ts.net` o il segreto `FANTA_HOST` dentro l'IPA.
+**Mai in git**: firme, certificati, profili, password, Apple ID. Nel repository e nell'IPA (entrambi pubblici) c'è UN SOLO indirizzo: quello predefinito, il dominio pubblico dell'app (`Config.indirizzoPredefinito`); mai un indirizzo privato o di rete privata. Chi ha un server proprio lo scrive in Lega > Server (o nell'area avanzata dell'accesso) e resta sul telefono. Il widget ha il suo indirizzo nelle impostazioni (Modifica widget). Il workflow IPA fallisce se trova `ts.net` o il segreto `FANTA_HOST` dentro l'IPA.
 
 ## Installazione sul telefono
 IPA non firmato dalla release `build-N`; lo firma e lo rinnova SideStore con l'Apple ID gratuito (certificato di 7 giorni, massimo 3 app, LocalDevVPN accesa).

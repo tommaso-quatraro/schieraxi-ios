@@ -20,11 +20,11 @@ final class CondivisoTests: XCTestCase {
 
     func testIdentificativiDaSideStore() {
         // SideStore riscrive il gruppo con un suffisso e lo mette in Info.plist (ALTAppGroups): si prova prima quello
-        let info: [String: Any] = ["ALTAppGroups": ["group.it.tommaso.schieraxi.ABCDE12345", "group.altro.invalid", "group.it.tommaso.schieraxi.ABCDE12345"]]
-        XCTAssertEqual(Condiviso.identificativi(info: info), ["group.it.tommaso.schieraxi.ABCDE12345", "group.it.tommaso.schieraxi"])
-        XCTAssertEqual(Condiviso.identificativi(info: [:]), ["group.it.tommaso.schieraxi"])
-        XCTAssertEqual(Condiviso.identificativi(info: ["ALTAppGroups": "non una lista"]), ["group.it.tommaso.schieraxi"])
-        XCTAssertEqual(Condiviso.identificativi(info: nil), ["group.it.tommaso.schieraxi"])
+        let info: [String: Any] = ["ALTAppGroups": ["group.it.schieraxi.app.ABCDE12345", "group.altro.invalid", "group.it.schieraxi.app.ABCDE12345"]]
+        XCTAssertEqual(Condiviso.identificativi(info: info), ["group.it.schieraxi.app.ABCDE12345", "group.it.schieraxi.app"])
+        XCTAssertEqual(Condiviso.identificativi(info: [:]), ["group.it.schieraxi.app"])
+        XCTAssertEqual(Condiviso.identificativi(info: ["ALTAppGroups": "non una lista"]), ["group.it.schieraxi.app"])
+        XCTAssertEqual(Condiviso.identificativi(info: nil), ["group.it.schieraxi.app"])
     }
 
     func testIndirizzoETokenSiScambiano() {
@@ -120,9 +120,9 @@ final class CodiceWidgetTests: XCTestCase {
         try? FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
         Condiviso.cartellaDiProva = cartella
         defer { Condiviso.cartellaDiProva = nil; try? FileManager.default.removeItem(at: cartella) }
-        var d = Condiviso.diagnostica(info: ["ALTAppGroups": ["group.it.tommaso.schieraxi.XYZ"]])
-        XCTAssertEqual(d.scrittiDaSideStore, ["group.it.tommaso.schieraxi.XYZ"])
-        XCTAssertEqual(d.provati.first, "group.it.tommaso.schieraxi.XYZ")
+        var d = Condiviso.diagnostica(info: ["ALTAppGroups": ["group.it.schieraxi.app.XYZ"]])
+        XCTAssertEqual(d.scrittiDaSideStore, ["group.it.schieraxi.app.XYZ"])
+        XCTAssertEqual(d.provati.first, "group.it.schieraxi.app.XYZ")
         XCTAssertFalse(d.filePresente)
         XCTAssertFalse(d.haIndirizzo)
         XCTAssertTrue(d.breve.contains("file no"), d.breve)

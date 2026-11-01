@@ -46,7 +46,7 @@ final class TokenTests: XCTestCase {
     /// Il Keychain vero. Nelle compilazioni senza firma iOS può rifiutarlo (errSecMissingEntitlement): in quel caso il test si salta,
     /// perché il ripiego in memoria di `KeychainToken` farebbe passare comunque il giro completo senza provare niente.
     func testKeychainVeroSalvaLeggeECancella() throws {
-        let servizio = "it.tommaso.schieraxi.prova-\(UUID().uuidString)"
+        let servizio = "it.schieraxi.app.prova-\(UUID().uuidString)"
         let sonda: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: servizio,
                                     kSecAttrAccount as String: "sonda", kSecValueData as String: Data("x".utf8)]
         let esito = SecItemAdd(sonda as CFDictionary, nil)
@@ -374,6 +374,7 @@ final class SessioneAccountTests: XCTestCase {
         let corpo = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(server.corpiInviati(a: "/registra").first)) as? [String: Any])
         XCTAssertEqual(corpo["invito"] as? String, "INV-123", "spazi tolti e maiuscolo, come i codici del server")
         XCTAssertEqual(corpo["nativo"] as? Bool, true)
+        XCTAssertEqual(corpo["accetto_termini"] as? Bool, true, "l'accettazione di Termini e Privacy parte con la registrazione")
         XCTAssertEqual(s.codiceDaMostrare, "AAAAA-BBBBB-CCCCC")
         XCTAssertNotNil(s.utente)
         s.codiceDaMostrare = nil   // «l'ho salvato»
@@ -516,6 +517,26 @@ final class DatiLocaliTests: XCTestCase {
         let dopoB = await Cache.leggi("/api/foto/1", indirizzo: indirizzo, cartella: "img")
         XCTAssertNil(dopoA, "all'uscita le risposte salvate di chi c'era prima spariscono")
         XCTAssertNil(dopoB)
+    }
+}
+
+@MainActor
+final class UscitaCancellaLeCopieDiIosTests: XCTestCase {
+    func testLaCacheDiUrlSessionSiSvuotaConLUscita() async throws {
+        let richiesta = URLRequest(url: URL(string: "https://prova-urlcache.invalid/api/oggi")!)
+        let risposta = HTTPURLResponse(url: richiesta.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        URLCache.shared.storeCachedResponse(CachedURLResponse(response: risposta, data: Data("x".utf8)), for: richiesta)
+        // la scrittura nella cache di iOS è asincrona: si aspetta che ci sia, poi si esce, poi si aspetta che non ci sia più
+        for _ in 0..<100 where URLCache.shared.cachedResponse(for: richiesta) == nil { try await Task.sleep(nanoseconds: 20_000_000) }
+        DatiLocali.svuota()
+        for _ in 0..<100 where URLCache.shared.cachedResponse(for: richiesta) != nil { try await Task.sleep(nanoseconds: 20_000_000) }
+        XCTAssertNil(URLCache.shared.cachedResponse(for: richiesta))
+    }
+
+    func testSottoIlCofanoVaConLaFunzioneDelServer() {
+        XCTAssertEqual(Funzione.sottoIlCofano, "sotto_il_cofano")
+        XCTAssertFalse(StatoFunzioni(scelte: [Funzione.sottoIlCofano: false]).acceso(Funzione.sottoIlCofano))
+        XCTAssertTrue(StatoFunzioni(scelte: [Funzione.sottoIlCofano: true]).acceso(Funzione.sottoIlCofano))
     }
 }
 

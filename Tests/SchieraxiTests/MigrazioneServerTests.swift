@@ -51,16 +51,29 @@ final class MigrazioneServerTests: XCTestCase {
     }
 
     func testNonRisponde_DueProveFalliteEIlPredefinitoRisponde() async {
-        memoria.set("https://mio-server.example", forKey: "indirizzo")
+        memoria.set(privato, forKey: "indirizzo")
         var chiamate: [String] = []
         let cambiato = await MigrazioneServer.migraSeIrraggiungibile(memoria) { indirizzo in
             chiamate.append(indirizzo)
             return indirizzo == Config.indirizzoPredefinito ? .raggiunto(versione: nil, squadra: nil) : .nonRaggiungibile
         }
         XCTAssertTrue(cambiato)
-        XCTAssertEqual(chiamate.filter { $0 == "https://mio-server.example" }.count, 2)
+        XCTAssertEqual(chiamate.filter { $0 == privato }.count, 2)
         XCTAssertNil(memoria.string(forKey: "indirizzo"))
         XCTAssertTrue(memoria.bool(forKey: MigrazioneServer.chiaveSpostato))
+    }
+
+    func testServerScelto_DallUtenteNonSiToccaMaiDaSolo() async {
+        memoria.set("https://mio-server.example", forKey: "indirizzo")
+        var chiamate = 0
+        let cambiato = await MigrazioneServer.migraSeIrraggiungibile(memoria) { indirizzo in
+            chiamate += 1
+            return indirizzo == Config.indirizzoPredefinito ? .raggiunto(versione: nil, squadra: nil) : .nonRaggiungibile
+        }
+        XCTAssertFalse(cambiato, "un server proprio che non risponde per un po' non fa perdere token e dati")
+        XCTAssertEqual(chiamate, 0, "nemmeno si prova")
+        XCTAssertEqual(memoria.string(forKey: "indirizzo"), "https://mio-server.example")
+        XCTAssertFalse(memoria.bool(forKey: MigrazioneServer.chiaveSpostato))
     }
 
     func testTelefonoOffline_NienteCambia() async {
