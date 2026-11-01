@@ -37,8 +37,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Numero della build (dopo il cambio di repository riparte da 200)
-        run: echo "BUILD_N=$((GITHUB_RUN_NUMBER + 200))" >> "$GITHUB_ENV"
+      - name: Numero della build (dopo la ricostruzione del repository riparte da 213)
+        run: echo "BUILD_N=$((GITHUB_RUN_NUMBER + 212))" >> "$GITHUB_ENV"
       - name: Installa XcodeGen
         run: brew install xcodegen
       - name: Crea il progetto Xcode
