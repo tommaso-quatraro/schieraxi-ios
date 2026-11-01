@@ -41,7 +41,7 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 ## Da NON cambiare (rompe SideStore/aggiornamenti/dati dell'utente)
 - Bundle id `it.tommaso.schieraxi` (e `it.tommaso.schieraxi.aggiorna` per il task in background, estensione widget col suo id): cambiarlo = app nuova, perso il rinnovo e l'App ID gratuito (limite 3 app, il widget ne usa uno in piu').
 - Schema URL `schieraxi://` (`oggi`, `formazione`, `mercato`, `scambi`, `lega`, `giocatore/<id>`, e `social?codice=...` / `social?errore=...` che riceve solo la finestra di accesso con Google): usato dalle notifiche ntfy con intestazione `Click`.
-- Bundle id, App Group, schema, target e IPA usano lo slug `schieraxi`. Il cambio di bundle id (31/10/2026) ha reso l'app una app NUOVA per SideStore: accesso da rifare, widget da riaggiungere, la vecchia app va cancellata a mano. I formati di copia di sicurezza vecchi si leggono ancora (`FileBackup.formatiVecchi`, da togliere dopo 30 giorni).
+- Bundle id, App Group, schema, target e IPA usano lo slug `schieraxi`. Il cambio di bundle id (31/10/2026) ha reso l'app una app NUOVA per SideStore: accesso da rifare, widget da riaggiungere, la vecchia app va cancellata a mano. Nessuna compatibilita' con i nomi di prima: schemi e formati di copia di sicurezza vecchi non si leggono piu' (controllo in `NomeVecchioTests`).
 - Nomi delle icone alternative (`AppIcon-blu|viola|arancio|rosso|grafite`) in `project.yml` e nell'asset catalog: il workflow IPA controlla che siano dichiarate.
 - I target di test NON devono finire nell'IPA (controllato dal workflow). `Config/Info.plist` e' generato e ignorato da git.
 
