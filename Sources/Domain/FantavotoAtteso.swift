@@ -121,7 +121,8 @@ struct TestoAffidabilita: Equatable {
     init?(_ a: AffidabilitaDiario?) {
         guard let a, let n = a.giornate, n > 0 else { return nil }
         let minime = a.giornateMinime ?? 8
-        pochiDati = a.giudizio == "pochi_dati" || a.pochiDati == true || (a.giudizio == nil && n < minime)
+        let pochi = a.giudizio == "pochi_dati" || a.pochiDati == true || (a.giudizio == nil && n < minime)
+        pochiDati = pochi
         let dichiarate = Formato.intero((a.fasciaDichiarata ?? 80) / 10)
 
         if let k = a.dentroFascia, let c = a.conFascia, c > 0 {
@@ -157,10 +158,10 @@ struct TestoAffidabilita: Equatable {
             giudizio = "Questo periodo è andato meglio del previsto: i punti veri sono stati spesso sopra la fascia."
             fuoriLinea = true
         case "in_linea":
-            giudizio = pochiDati ? Self.frasePochi(minime) : "È in linea con quello che dichiariamo."
+            giudizio = pochi ? Self.frasePochi(minime) : "È in linea con quello che dichiariamo."
             fuoriLinea = false
         default:
-            giudizio = pochiDati ? Self.frasePochi(minime) : nil
+            giudizio = pochi ? Self.frasePochi(minime) : nil
             fuoriLinea = false
         }
     }
