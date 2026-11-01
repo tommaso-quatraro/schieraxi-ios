@@ -258,7 +258,7 @@ final class ModelliTests: XCTestCase {
 
     func testErroreDiDecodificaDaUnMessaggioInItaliano() {
         XCTAssertThrowsError(try Decodifica.decodifica(Data("{}".utf8)) as Oggi) { errore in
-            XCTAssertTrue(errore.localizedDescription.hasPrefix("Risposta inattesa dal server"), errore.localizedDescription)
+            XCTAssertTrue(errore.localizedDescription.hasPrefix("Il server ha mandato una risposta"), errore.localizedDescription)
         }
     }
 

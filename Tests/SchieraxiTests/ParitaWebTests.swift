@@ -300,7 +300,7 @@ final class DiarioEBackupTests: XCTestCase {
         await vm.ripristina()
         XCTAssertNil(vm.daRipristinare)
         XCTAssertTrue(vm.riuscito, vm.messaggio ?? "")
-        XCTAssertTrue((vm.messaggio ?? "").contains("Ripristinati 1 file"))
+        XCTAssertTrue((vm.messaggio ?? "").contains("Ripristino completato"))
     }
 }
 

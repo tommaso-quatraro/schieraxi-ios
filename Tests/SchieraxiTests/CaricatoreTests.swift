@@ -136,7 +136,7 @@ final class CaricatoreTests: XCTestCase {
         let c = Caricatore<Oggi>("/api/oggi", cache: false, ascolta: false, server: server)
         await c.ricarica()
         XCTAssertNil(c.dato)
-        XCTAssertTrue(c.errore?.hasPrefix("Risposta inattesa dal server") == true, c.errore ?? "nessun errore")
+        XCTAssertTrue(c.errore?.hasPrefix("Il server ha mandato una risposta") == true, c.errore ?? "nessun errore")
     }
 }
 

@@ -164,7 +164,7 @@ final class ServerHTTPOstileTests: XCTestCase {
                 _ = try await server.grezzo("/api/oggi")
                 XCTFail("doveva lanciare")
             } catch {
-                XCTAssertEqual(error.localizedDescription, "Il server ha risposto con un errore (\(codice)).")
+                XCTAssertEqual(error.localizedDescription, "Il server ha un problema (codice \(codice)). Riprova tra poco.")
                 XCTAssertFalse(error.localizedDescription.contains("<html"), "il corpo della risposta non finisce nei messaggi")
             }
         }
