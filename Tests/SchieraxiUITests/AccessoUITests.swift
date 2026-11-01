@@ -46,7 +46,7 @@ final class AccessoUITests: XCTestCase {
         nome.typeText("mister.rossi")
         let password = app.secureTextFields["Password"]
         password.tap()
-        password.typeText("Tre-Quarti-Dieci")
+        password.typeText("Prova-Finta-Zero")
         XCTAssertTrue(entra.isEnabled)
         entra.tap()
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30), "dopo l'accesso compare l'app")
@@ -139,7 +139,7 @@ final class AccessoUITests: XCTestCase {
         let password = app.secureTextFields["Password"]
         XCTAssertTrue(password.waitForExistence(timeout: 30))
         password.tap()
-        password.typeText("Tre-Quarti-Dieci")
+        password.typeText("Prova-Finta-Zero")
         XCUIDevice.shared.press(.home)
         sleep(2)
         app.activate()

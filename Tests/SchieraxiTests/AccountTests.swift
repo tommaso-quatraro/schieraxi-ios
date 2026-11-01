@@ -19,7 +19,7 @@ final class RegoleAccountTests: XCTestCase {
     }
 
     func testPassword() {
-        XCTAssertNil(RegoleAccount.problemaPassword("Tre-Quarti-Dieci", nome: "mister"))
+        XCTAssertNil(RegoleAccount.problemaPassword("Prova-Finta-Zero", nome: "mister"))
         XCTAssertNotNil(RegoleAccount.problemaPassword(""))
         XCTAssertNotNil(RegoleAccount.problemaPassword("corta1"), "almeno 10 caratteri")
         XCTAssertNotNil(RegoleAccount.problemaPassword(String(repeating: "x", count: 201)), "al massimo 200")
@@ -329,7 +329,7 @@ final class SessioneAccountTests: XCTestCase {
         let server = serverAccount()
         let s = sessione(server)
         let generazione = s.generazione
-        try await s.accedi(nomeUtente: "  Mister.Rossi ", password: "Tre-Quarti-Dieci")
+        try await s.accedi(nomeUtente: "  Mister.Rossi ", password: "Prova-Finta-Zero")
         XCTAssertEqual(s.utente?.nomeUtente, "mister.rossi")
         XCTAssertEqual(archivio.leggi(server: server.indirizzo), "tok-1")
         XCTAssertGreaterThan(s.generazione, generazione, "le schermate si ricostruiscono")
@@ -338,7 +338,7 @@ final class SessioneAccountTests: XCTestCase {
         let corpo = try XCTUnwrap(server.corpiInviati(a: "/api/account/accedi").first)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: corpo) as? [String: Any])
         XCTAssertEqual(json["nome_utente"] as? String, "mister.rossi")
-        XCTAssertEqual(json["password"] as? String, "Tre-Quarti-Dieci")
+        XCTAssertEqual(json["password"] as? String, "Prova-Finta-Zero")
         XCTAssertEqual(json["nativo"] as? Bool, true)
         // il token non finisce da nessuna parte tranne il Keychain
         for (chiave, valore) in memoria.dictionaryRepresentation() {
@@ -370,7 +370,7 @@ final class SessioneAccountTests: XCTestCase {
         memoria.set(true, forKey: "account.multiutente")
         let server = serverAccount()
         let s = sessione(server)
-        try await s.registra(nomeUtente: "mister.rossi", password: "Tre-Quarti-Dieci", invito: " inv-123 ")
+        try await s.registra(nomeUtente: "mister.rossi", password: "Prova-Finta-Zero", invito: " inv-123 ")
         let corpo = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(server.corpiInviati(a: "/registra").first)) as? [String: Any])
         XCTAssertEqual(corpo["invito"] as? String, "INV-123", "spazi tolti e maiuscolo, come i codici del server")
         XCTAssertEqual(corpo["nativo"] as? Bool, true)
@@ -384,12 +384,12 @@ final class SessioneAccountTests: XCTestCase {
     func testRecuperoRestituisceIlNuovoCodiceEMandaMaiuscolo() async throws {
         let server = serverAccount()
         let s = sessione(server)
-        let nuovo = try await s.recupera(nomeUtente: "Mister.Rossi", codice: " aaaaa-bbbbb ", nuovaPassword: "Tre-Quarti-Dieci")
+        let nuovo = try await s.recupera(nomeUtente: "Mister.Rossi", codice: " aaaaa-bbbbb ", nuovaPassword: "Prova-Finta-Zero")
         XCTAssertEqual(nuovo, "GGGGG-HHHHH-JJJJJ")
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(server.corpiInviati(a: "/recupero").first)) as? [String: Any])
         XCTAssertEqual(json["codice"] as? String, "AAAAA-BBBBB")
         XCTAssertEqual(json["nome_utente"] as? String, "mister.rossi")
-        XCTAssertEqual(json["nuova"] as? String, "Tre-Quarti-Dieci")
+        XCTAssertEqual(json["nuova"] as? String, "Prova-Finta-Zero")
         XCTAssertEqual(s.stato, .nonRichiesto, "dopo il recupero non si è connessi: si fa l'accesso con la password nuova")
     }
 
@@ -397,7 +397,7 @@ final class SessioneAccountTests: XCTestCase {
         let server = serverAccount()
         memoria.set(true, forKey: "account.multiutente")
         let s = sessione(server)
-        try await s.accedi(nomeUtente: "mister.rossi", password: "Tre-Quarti-Dieci")
+        try await s.accedi(nomeUtente: "mister.rossi", password: "Prova-Finta-Zero")
         let prima = pulizie
         await s.esci()
         XCTAssertEqual(server.quante("POST /api/account/esci"), 1)
@@ -406,7 +406,7 @@ final class SessioneAccountTests: XCTestCase {
         XCTAssertGreaterThan(pulizie, prima, "all'uscita i dati locali si cancellano")
         XCTAssertNil(memoria.data(forKey: "account.utente"))
         // ripristino: si può accedere di nuovo
-        try await s.accedi(nomeUtente: "mister.rossi", password: "Tre-Quarti-Dieci")
+        try await s.accedi(nomeUtente: "mister.rossi", password: "Prova-Finta-Zero")
         XCTAssertNotNil(s.utente)
         XCTAssertEqual(archivio.leggi(server: server.indirizzo), "tok-1")
     }
@@ -433,7 +433,7 @@ final class SessioneAccountTests: XCTestCase {
 
         archivio.salva("tok", server: server.indirizzo)
         let t = sessione(server)
-        try await t.elimina(password: "Tre-Quarti-Dieci")
+        try await t.elimina(password: "Prova-Finta-Zero")
         XCTAssertEqual(server.quante("/api/account/elimina"), 1)
         XCTAssertEqual(t.stato, .daAccedere)
         XCTAssertNil(archivio.leggi(server: server.indirizzo))

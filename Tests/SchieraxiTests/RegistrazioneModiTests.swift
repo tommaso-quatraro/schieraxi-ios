@@ -38,7 +38,7 @@ final class RegistrazioneModiTests: XCTestCase {
             return Data(#"{"multiutente": true, "utente": {"id": 1, "nome_utente": "mister", "ruolo": "utente", "nome_visualizzato": "Mister"}, "token": "fw_non_usato"}"#.utf8)
         }
         let s = SessioneAccount(server: server)
-        let attesa = try await s.registra(nomeUtente: "Mister", password: "Tre-Quarti-Dieci", invito: "", email: " nome@example.invalid ")
+        let attesa = try await s.registra(nomeUtente: "Mister", password: "Prova-Finta-Zero", invito: "", email: " nome@example.invalid ")
         XCTAssertEqual(attesa, IscrizioneInAttesa(email: "nome@example.invalid", iscrizione: "segreto-finto"))
         XCTAssertNil(s.utente, "senza il codice l'account non c'è")
         let corpo = String(decoding: try XCTUnwrap(server.corpiInviati(a: "/api/account/registra").first), as: UTF8.self)
