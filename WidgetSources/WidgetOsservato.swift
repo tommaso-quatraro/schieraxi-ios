@@ -43,11 +43,27 @@ struct ConfigurazioneOsservato: WidgetConfigurationIntent {
     @Parameter(title: "Giocatore")
     var giocatore: GiocatoreScelto?
 
-    @Parameter(title: "Indirizzo del server (solo se manca)", default: "")
-    var indirizzo: String
+    // Il collegamento è automatico (come negli altri widget): il codice compare solo con «Collegamento manuale».
+    @Parameter(title: "Collegamento manuale", default: false)
+    var manuale: Bool
 
     @Parameter(title: "Codice di collegamento", default: "")
     var codice: String
+
+    static var parameterSummary: some ParameterSummary {
+        When(\.$manuale, .equalTo, true) {
+            Summary("Giocatore osservato") {
+                \.$giocatore
+                \.$manuale
+                \.$codice
+            }
+        } otherwise: {
+            Summary("Giocatore osservato") {
+                \.$giocatore
+                \.$manuale
+            }
+        }
+    }
 }
 
 struct VoceOsservato: TimelineEntry {
@@ -70,7 +86,7 @@ struct FornitoreOsservato: AppIntentTimelineProvider {
 
     func timeline(for configuration: ConfigurazioneOsservato, in context: Context) async -> Timeline<VoceOsservato> {
         var base = ConfigurazioneWidget()
-        base.indirizzo = configuration.indirizzo
+        base.manuale = configuration.manuale
         base.codice = configuration.codice
         let t = await Fornitore().timeline(for: base, in: context)
         let id = configuration.giocatore?.id

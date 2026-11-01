@@ -59,10 +59,15 @@ jobs:
           # SideStore non sa che servono e non registra il gruppo. ldid li incorpora (SideStore poi firma da capo).
           brew install ldid > /dev/null 2>&1 || echo "ldid non installato: niente App Group nell'IPA"
           if command -v ldid > /dev/null; then
+            # Keychain condiviso con il widget (ripiego senza App Group): Xcode metterebbe la squadra al posto di $(AppIdentifierPrefix);
+            # qui serve un prefisso qualsiasi, perché SideStore (AltSign) cambia tutto quello che sta prima del primo punto con la squadra vera.
+            sed -i '' 's/\$(AppIdentifierPrefix)/ABCDE12345./' Config/Schieraxi.entitlements Config/SchieraxiWidget.entitlements
+            grep -A1 keychain-access-groups Config/SchieraxiWidget.entitlements
             ldid -SConfig/SchieraxiWidget.entitlements Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget || echo "ldid: widget non riuscito"
             ldid -SConfig/Schieraxi.entitlements Payload/Schieraxi.app/Schieraxi || echo "ldid: app non riuscito"
             ldid -e Payload/Schieraxi.app/Schieraxi | grep -A2 application-groups || echo "ATTENZIONE: permessi non trovati nell'app"
             ldid -e Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget | grep -A2 application-groups || echo "ATTENZIONE: permessi non trovati nel widget"
+            ldid -e Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget | grep -A1 keychain-access-groups || echo "ATTENZIONE: Keychain condiviso non trovato nel widget"
           fi
           zip -qry Schieraxi.ipa Payload
           ls -la Schieraxi.ipa
