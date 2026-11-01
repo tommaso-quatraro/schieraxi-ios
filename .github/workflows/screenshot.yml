@@ -12,14 +12,24 @@ on:
       scatti:
         description: "veloce = solo le schermate principali (pochi minuti); completo = tutte le varianti (quasi un'ora)"
         type: choice
-        options: [veloce, completo]
+        options: [veloce, completo, collaudo]
         default: veloce
+      iphone:
+        description: "quale iPhone: predefinito (Pro), piccolo (SE o il più stretto), grande (Pro Max)"
+        type: choice
+        options: [predefinito, piccolo, grande]
+        default: predefinito
+      dispositivi:
+        description: "quali giri: tutti, solo iphone, solo ipad (per dividere il collaudo su più Mac in parallelo)"
+        type: choice
+        options: [tutti, iphone, ipad]
+        default: tutti
   pull_request:
     types: [opened, reopened, synchronize, labeled]
 
 # Una sola esecuzione per ramo o PR: un nuovo push annulla quella in corso.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.scatti }}-${{ inputs.iphone }}-${{ inputs.dispositivi }}
   cancel-in-progress: true
 
 permissions:
@@ -89,9 +99,11 @@ jobs:
       - name: Scatta le fotografie dell'app
         env:
           SCATTI: ${{ inputs.scatti || 'veloce' }}
+          IPHONE: ${{ inputs.iphone == 'piccolo' && 'iphone-piccolo' || inputs.iphone == 'grande' && 'iphone-grande' || 'iphone' }}
+          DISPOSITIVI: ${{ inputs.dispositivi || 'tutti' }}
         run: bash scripts/screenshot.sh build/Build/Products/Debug-iphonesimulator/Schieraxi.app screenshot
       - name: Scatta le fotografie dei widget
-        if: always()
+        if: always() && inputs.dispositivi != 'ipad'
         run: bash scripts/screenshot_widget.sh build/Build/Products/Debug-iphonesimulator/AnteprimaWidget.app screenshot-widget
       - name: Carica le fotografie dell'app
         if: always()
@@ -126,3 +138,49 @@ jobs:
             crash/*
           retention-days: 7
           if-no-files-found: ignore
+
+  # Solo nel collaudo (scatti = collaudo): il controllo automatico di accessibilità di Xcode su ogni schermata della demo
+  # (contrasto, aree di tocco, testo tagliato, Dynamic Type, descrizioni per VoiceOver). Non fallisce per i problemi trovati:
+  # li elenca nel log (righe AUDIT|...) e nell'artifact «accessibilita».
+  accessibilita:
+    needs: quando
+    if: needs.quando.outputs.serve == 'true' && inputs.scatti == 'collaudo' && inputs.dispositivi != 'ipad'
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installa XcodeGen (se manca)
+        run: command -v xcodegen > /dev/null || brew install xcodegen
+      - name: Crea il progetto Xcode
+        run: xcodegen generate
+      - name: Scegli e accendi il simulatore
+        id: sim
+        env:
+          IPHONE: ${{ inputs.iphone == 'piccolo' && 'iphone-piccolo' || inputs.iphone == 'grande' && 'iphone-grande' || 'iphone' }}
+        run: |
+          IFS=$'\t' read -r UDID NOME IOS <<< "$(python3 -I scripts/scegli_simulatore.py "$IPHONE")"
+          echo "Simulatore: $NOME ($IOS)"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b > /dev/null
+      - name: Controllo di accessibilità
+        env:
+          TEST_RUNNER_AUDIT_ACCESSIBILITA: "1"
+        run: |
+          set +e
+          mkdir -p accessibilita
+          xcodebuild test -project Schieraxi.xcodeproj -scheme Schieraxi             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" -derivedDataPath build             -only-testing:SchieraxiUITests/AuditAccessibilitaUITests             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ARCHS=arm64 ONLY_ACTIVE_ARCH=YES             > accessibilita/test.log 2>&1
+          echo "uscita di xcodebuild: $?"
+          grep -E "^AUDIT" accessibilita/test.log | sort -u > accessibilita/problemi.txt
+          echo "Problemi trovati: $(grep -c '^AUDIT|' accessibilita/problemi.txt)"
+          grep -E "^AUDIT-FINE" accessibilita/problemi.txt
+          grep -E "error:|\*\* TEST" accessibilita/test.log | head -20
+          python3 -I scripts/maschera_log.py accessibilita/test.log accessibilita/test-mascherato.log && mv accessibilita/test-mascherato.log accessibilita/test.log || rm -f accessibilita/test.log
+      - name: Carica i risultati
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibilita
+          path: accessibilita/*
+          retention-days: 14
+          if-no-files-found: warn
