@@ -1,0 +1,120 @@
+# COPIA PER IL REPOSITORY UNICO (`tommaso-quatraro/schieraxi`, app in `ios/`). NON è un workflow qui: sta in `docs/` apposta.
+# Al passaggio: copiarla in `.github/workflows/ipa.yml` del repository unico (STESSO nome file: il contatore delle corse è per file)
+# e scrivere in `BASE_BUILD` l'ultimo numero di build già pubblicato (le nuove partono da BASE_BUILD + 1, mai più in basso).
+# Differenze dal file di oggi (`.github/workflows/ipa.yml`): filtri `ios/**`, `working-directory: ios`, percorsi degli artifact,
+# cartella `ios` passata a `genera_sorgente.py`, release `build-N` con `--latest` (le release del server `v1.x` vanno con `--latest=false`).
+name: Compila IPA
+
+# Compila l'app su un Mac di GitHub SENZA firma (la firma la fa SideStore sull'iPhone con l'Apple ID gratuito).
+# L'indirizzo del server NON è dentro l'app: si inserisce nell'app al primo avvio (e in Lega > Server). Nessun segreto: il controllo cerca solo indirizzi ts.net.
+# Le unioni fatte con GITHUB_TOKEN non fanno partire `on: push`: dopo l'unione di una PR che tocca `ios/` il job `rilascia` lancia
+# `gh workflow run ipa.yml --ref main` (workflow_dispatch parte sempre).
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Immagine del Mac (prova: macos-26 per Xcode 26 e Liquid Glass; la release si crea solo con quella predefinita, macos-26; macos-15 resta come ripiego)"
+        type: choice
+        options: [macos-26, macos-15]
+        default: macos-26
+  push:
+    branches: [main]
+    # solo se cambia qualcosa che finisce nell'IPA o nella sua compilazione (i documenti e i test non servono)
+    paths:
+      - "ios/Sources/**"
+      - "ios/WidgetSources/**"
+      - "ios/Config/**"
+      - "ios/project.yml"
+      - "ios/scripts/genera_sorgente.py"
+      - "ios/scripts/maschera_log.py"
+      - ".github/workflows/ipa.yml"
+
+permissions:
+  contents: write
+
+# Una build alla volta; in coda resta solo l'ultima richiesta (le altre si annullano da sole).
+# Su main la build in corso NON si annulla mai: può essere quella che crea la release (build-N).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  # ULTIMO numero di build già pubblicato nel repository precedente (da scrivere al passaggio). La prossima è BASE_BUILD + 1.
+  BASE_BUILD: 213
+
+defaults:
+  run:
+    working-directory: ios
+
+jobs:
+  ipa:
+    runs-on: ${{ inputs.runner || 'macos-26' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Numero della build
+        run: echo "BUILD_N=$((GITHUB_RUN_NUMBER + BASE_BUILD))" >> "$GITHUB_ENV"
+      - name: Installa XcodeGen
+        run: brew install xcodegen
+      - name: Crea il progetto Xcode
+        run: xcodegen generate
+      - name: Compila (senza firma)
+        run: |
+          set -o pipefail
+          xcodebuild -project Schieraxi.xcodeproj -scheme Schieraxi -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -archivePath build/Schieraxi.xcarchive \
+            archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION="1.0.${{ env.BUILD_N }}" CURRENT_PROJECT_VERSION="${{ env.BUILD_N }}" \
+            2>&1 | tee build.log | tail -n 40
+      - name: Crea l'IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Schieraxi.xcarchive/Products/Applications/Schieraxi.app Payload/
+          # App Group con l'Apple ID gratuito: i permessi (entitlements) vanno dentro i programmi dell'IPA non firmato, altrimenti
+          # SideStore non sa che servono e non registra il gruppo. ldid li incorpora (SideStore poi firma da capo).
+          brew install ldid > /dev/null 2>&1 || echo "ldid non installato: niente App Group nell'IPA"
+          if command -v ldid > /dev/null; then
+            ldid -SConfig/SchieraxiWidget.entitlements Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget || echo "ldid: widget non riuscito"
+            ldid -SConfig/Schieraxi.entitlements Payload/Schieraxi.app/Schieraxi || echo "ldid: app non riuscito"
+            ldid -e Payload/Schieraxi.app/Schieraxi | grep -A2 application-groups || echo "ATTENZIONE: permessi non trovati nell'app"
+            ldid -e Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget | grep -A2 application-groups || echo "ATTENZIONE: permessi non trovati nel widget"
+          fi
+          zip -qry Schieraxi.ipa Payload
+          ls -la Schieraxi.ipa
+          # l'estensione del widget deve stare dentro l'app (PlugIns), con il suo eseguibile
+          ls -la Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex
+          test -f Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/Info.plist
+          # il repository è pubblico: l'indirizzo del server non deve stare nell'IPA (né come chiave dell'Info.plist né come testo)
+          ! /usr/libexec/PlistBuddy -c "Print :FantaHost" Payload/Schieraxi.app/Info.plist 2>/dev/null
+          ! /usr/libexec/PlistBuddy -c "Print :FantaHost" Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/Info.plist 2>/dev/null
+          if grep -rqiE '[a-z0-9-]+[.]ts[.]net' Payload; then echo "ERRORE: un indirizzo ts.net e' dentro l'IPA"; exit 1; fi
+          # le icone alternative (Lega > Icona dell'app) devono essere dichiarate nell'Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons" Payload/Schieraxi.app/Info.plist | head -n 20
+          # i target di test non devono finire nell'IPA
+          ! ls Payload/Schieraxi.app/PlugIns | grep -i test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Schieraxi-ipa
+          path: ios/Schieraxi.ipa
+          retention-days: 30
+      - name: Pubblica come release (da scaricare dall'iPhone)
+        if: github.ref == 'refs/heads/main' && (inputs.runner || 'macos-26') == 'macos-26'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # il sorgente di SideStore: l'indirizzo fisso è .../releases/latest/download/sorgente.json
+          # (vale solo se l'ultima release marcata «Latest» è una build-N: le release del server si creano con --latest=false)
+          python3 scripts/genera_sorgente.py "$GITHUB_REPOSITORY" "${{ env.BUILD_N }}" Schieraxi.ipa ios
+          gh release create "build-${{ env.BUILD_N }}" Schieraxi.ipa sorgente.json --title "Build ${{ env.BUILD_N }}" --latest --notes "IPA non firmato, da installare con SideStore. Aggiornamenti automatici: aggiungi in SideStore il sorgente https://github.com/$GITHUB_REPOSITORY/releases/latest/download/sorgente.json" --repo "$GITHUB_REPOSITORY"
+      - name: Maschera il log (il repository è pubblico)
+        if: failure()
+        run: |
+          python3 -I scripts/maschera_log.py build.log build-mascherato.log
+      - name: Log in caso di errore
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-compilazione
+          path: ios/build-mascherato.log
+          if-no-files-found: ignore

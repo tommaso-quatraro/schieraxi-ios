@@ -58,3 +58,7 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 - I pulsanti compaiono SOLO se il server dichiara `social: ["google"]` (nel 401 e in `/api/account/me`): si ricorda in `ServiziSociali` (UserDefaults `serviziSociali`). Spento = tutto invisibile.
 - Logica pura e testata: `Domain/AccessoSocial.swift` (PKCE, ritorno, risposte tolleranti, frasi dei codici d'errore). Sessione: `SessioneAccount` (`accediConGoogle`, `completaConGoogle`, `collegaGoogle`, `riconfermaGoogle`, `scollegaGoogle`, `impostaPassword`). Schermate: `Presentation/Accesso/AccessoGoogleView.swift`.
 - Errori del server con campo `codice` -> `ErroreApi.codificato` (es. `serve_riconferma`, `ultimo_accesso`, `email_gia_usata`).
+
+## Repository unico (passaggio)
+- App dentro `tommaso-quatraro/schieraxi`, cartella `ios/`. Copie dei workflow per quel repository: `docs/ipa-repo-unico.yml` (-> `.github/workflows/ipa.yml`, con `BASE_BUILD`) e `docs/ios-repo-unico.yml` (-> `ios.yml`). Sorgente SideStore: `https://github.com/tommaso-quatraro/schieraxi/releases/latest/download/sorgente.json`.
+- `NuovaVersione` legge l'elenco `releases?per_page=30` e prende la `build-N` piu' alta (`tagPiuAlto`), ignorando le release `v1.x` del server. `ipa.yml` non usa segreti. Modalita' demo (`-DEMO_ACCESSO`): la password si compone a caso, non e' scritta nel codice.

@@ -46,9 +46,9 @@ final class ValidazioneAvversariaTests: XCTestCase {
         XCTAssertNotNil(RegoleAccount.problemaSpaziNome(" mister"))
         XCTAssertNotNil(RegoleAccount.problemaSpaziNome("mister\n"))
         XCTAssertNil(RegoleAccount.problemaSpaziNome("mister"))
-        XCTAssertNotNil(RegoleAccount.problemaPassword(" Tre-Quarti-Dieci"))
-        XCTAssertNotNil(RegoleAccount.problemaPassword("Tre-Quarti-Dieci "))
-        XCTAssertNotNil(RegoleAccount.problemaPassword("Tre-Quarti-Dieci\n"))
+        XCTAssertNotNil(RegoleAccount.problemaPassword(" Prova-Finta-Zero"))
+        XCTAssertNotNil(RegoleAccount.problemaPassword("Prova-Finta-Zero "))
+        XCTAssertNotNil(RegoleAccount.problemaPassword("Prova-Finta-Zero\n"))
         XCTAssertNil(RegoleAccount.problemaPassword("Tre Quarti Dieci"), "gli spazi in mezzo vanno bene")
     }
 
@@ -281,7 +281,7 @@ final class SessioneAvversariaTests: XCTestCase {
     func testHtmlAlPostoDelJsonDiceCheNonESerUnServerDiSchieraxi() async {
         memoria.set(true, forKey: "account.multiutente")
         let s = sessione(conRisposta("<html><body>Benvenuto</body></html>"))
-        do { try await s.accedi(nomeUtente: "mister", password: "Tre-Quarti-Dieci"); XCTFail("doveva lanciare") } catch {
+        do { try await s.accedi(nomeUtente: "mister", password: "Prova-Finta-Zero"); XCTFail("doveva lanciare") } catch {
             XCTAssertEqual(error as? SessioneAccount.Errore, .serverNonValido)
             XCTAssertTrue(error.localizedDescription.contains("server di SchieraXI"))
         }
@@ -304,7 +304,7 @@ final class SessioneAvversariaTests: XCTestCase {
             let archivioPulito = MemoriaToken()
             let server = conRisposta(corpo)
             let s = sessione(server, archivio: archivioPulito)
-            do { try await s.accedi(nomeUtente: "mister", password: "Tre-Quarti-Dieci"); XCTFail("non doveva entrare con: \(corpo.prefix(60))") } catch {}
+            do { try await s.accedi(nomeUtente: "mister", password: "Prova-Finta-Zero"); XCTFail("non doveva entrare con: \(corpo.prefix(60))") } catch {}
             XCTAssertNil(s.utente, "non si entra con: \(corpo.prefix(60))")
             XCTAssertNil(archivioPulito.leggi(server: server.indirizzo), "nessun token salvato")
             XCTAssertFalse(s.inCorso)
@@ -314,7 +314,7 @@ final class SessioneAvversariaTests: XCTestCase {
     func testCodiceDiRecuperoOstileNonSiMostra() async {
         let corpo = "{\"multiutente\": true, \"utente\": \(utenteJSON), \"token\": \"abc\", \"codice_recupero\": \"<b>ciao</b> ciao\"}"
         let s = sessione(conRisposta(corpo))
-        do { try await s.registra(nomeUtente: "mister", password: "Tre-Quarti-Dieci", invito: "X"); XCTFail() } catch {
+        do { try await s.registra(nomeUtente: "mister", password: "Prova-Finta-Zero", invito: "X"); XCTFail() } catch {
             XCTAssertEqual(error as? SessioneAccount.Errore, .rispostaNonValida)
         }
         XCTAssertNil(s.codiceDaMostrare)
@@ -324,12 +324,12 @@ final class SessioneAvversariaTests: XCTestCase {
     func testIlTokenNonFinisceInUserDefaultsNeNelloStato() async throws {
         let corpo = "{\"multiutente\": true, \"utente\": \(utenteJSON), \"token\": \"segretissimo-123\", \"codice_recupero\": \"AAAAA-BBBBB-CCCCC\"}"
         let s = sessione(conRisposta(corpo))
-        try await s.registra(nomeUtente: "mister", password: "Tre-Quarti-Dieci", invito: "X")
+        try await s.registra(nomeUtente: "mister", password: "Prova-Finta-Zero", invito: "X")
         for suite in [memoria!, UserDefaults.standard] {
             for (chiave, valore) in suite.dictionaryRepresentation() {
                 let testo = "\(valore)"
                 XCTAssertFalse(testo.contains("segretissimo-123"), "token in UserDefaults (\(chiave))")
-                XCTAssertFalse(testo.contains("Tre-Quarti-Dieci"), "password in UserDefaults (\(chiave))")
+                XCTAssertFalse(testo.contains("Prova-Finta-Zero"), "password in UserDefaults (\(chiave))")
                 XCTAssertFalse(testo.contains("AAAAA-BBBBB-CCCCC"), "codice di recupero in UserDefaults (\(chiave))")
             }
         }
@@ -342,7 +342,7 @@ final class SessioneAvversariaTests: XCTestCase {
         let corpo = "{\"multiutente\": true, \"utente\": \(utenteJSON), \"token\": \"abc\"}"
         let server = conRisposta(corpo)
         let s = sessione(server, archivio: perde)
-        try await s.accedi(nomeUtente: "mister", password: "Tre-Quarti-Dieci")
+        try await s.accedi(nomeUtente: "mister", password: "Prova-Finta-Zero")
         XCTAssertNotNil(s.utente, "si entra lo stesso, finché l'app è aperta")
         XCTAssertTrue(s.avviso?.contains("in modo sicuro") == true, s.avviso ?? "nessun avviso")
         await s.esci()
@@ -359,8 +359,8 @@ final class SessioneAvversariaTests: XCTestCase {
             return Data(corpo.utf8)
         }
         let s = sessione(server)
-        async let primo: Void = s.accedi(nomeUtente: "mister", password: "Tre-Quarti-Dieci")
-        async let secondo: Void = s.accedi(nomeUtente: "mister", password: "Tre-Quarti-Dieci")
+        async let primo: Void = s.accedi(nomeUtente: "mister", password: "Prova-Finta-Zero")
+        async let secondo: Void = s.accedi(nomeUtente: "mister", password: "Prova-Finta-Zero")
         var esiti: [Bool] = []
         do { try await primo; esiti.append(true) } catch { esiti.append(false) }
         do { try await secondo; esiti.append(true) } catch { esiti.append(false) }
@@ -475,7 +475,7 @@ final class SessioneAvversariaTests: XCTestCase {
     func testUscitaDopoRegistrazioneNonLasciaIlCodiceDiRecupero() async throws {
         let corpo = "{\"multiutente\": true, \"utente\": \(utenteJSON), \"token\": \"abc\", \"codice_recupero\": \"AAAAA-BBBBB-CCCCC\"}"
         let s = sessione(conRisposta(corpo))
-        try await s.registra(nomeUtente: "mister", password: "Tre-Quarti-Dieci", invito: "X")
+        try await s.registra(nomeUtente: "mister", password: "Prova-Finta-Zero", invito: "X")
         XCTAssertNotNil(s.codiceDaMostrare)
         await s.esci()
         XCTAssertNil(s.codiceDaMostrare, "stato impossibile: codice da mostrare senza utente")

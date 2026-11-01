@@ -349,9 +349,9 @@ final class SessioneGoogleTests: XCTestCase {
             p == "/api/account/imposta-password" ? Data(#"{"ok": true, "codice_recupero": "AAAAA-BBBBB-CCCCC"}"#.utf8) : nil
         })
         let sess = sessione(s)
-        try await sess.impostaPassword("Tre-Quarti-Dieci")
+        try await sess.impostaPassword("Prova-Finta-Zero")
         XCTAssertEqual(sess.codiceDaMostrare, "AAAAA-BBBBB-CCCCC")
-        XCTAssertEqual(try corpo(s, "imposta-password")["password"] as? String, "Tre-Quarti-Dieci")
+        XCTAssertEqual(try corpo(s, "imposta-password")["password"] as? String, "Prova-Finta-Zero")
     }
 
     // MARK: cosa dichiara il server
