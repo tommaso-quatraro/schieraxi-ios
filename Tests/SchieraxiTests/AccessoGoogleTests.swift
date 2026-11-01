@@ -70,7 +70,9 @@ final class AccessoGooglePuraTests: XCTestCase {
     }
 
     func testIndirizzoDiAvvioSoloHttps() {
-        XCTAssertNotNil(IndirizzoAvvioSocial.valido("https://accesso.example.invalid/auth?x=1"))
+        XCTAssertNotNil(IndirizzoAvvioSocial.valido("https://accounts.google.com/o/oauth2/v2/auth?x=1"))
+        XCTAssertNil(IndirizzoAvvioSocial.valido("https://accesso.example.invalid/auth?x=1"))
+        XCTAssertNil(IndirizzoAvvioSocial.valido("https://accounts.google.com.example.invalid/auth"))
         XCTAssertNil(IndirizzoAvvioSocial.valido("http://accesso.example.invalid/auth"))
         XCTAssertNil(IndirizzoAvvioSocial.valido("javascript:alert(1)"))
         XCTAssertNil(IndirizzoAvvioSocial.valido("https://utente:segreto@example.invalid/"))
@@ -117,7 +119,7 @@ final class SessioneGoogleTests: XCTestCase {
     private var archivio: MemoriaToken!
     private let nomeSuite = "prova-google-\(UUID().uuidString)"
     private let utenteJSON = #"{"id": 7, "nome_utente": "mister.rossi", "ruolo": "utente", "creato": "2026-11-01"}"#
-    private let avviato = #"{"url": "https://accesso.example.invalid/auth?s=1", "scade_minuti": 10}"#
+    private let avviato = #"{"url": "https://accounts.google.com/o/oauth2/v2/auth?s=1", "scade_minuti": 10}"#
 
     override func setUp() {
         super.setUp()
@@ -166,7 +168,7 @@ final class SessioneGoogleTests: XCTestCase {
         XCTAssertEqual(archivio.leggi(server: s.indirizzo), "tok-g", "il token sta nell'archivio sicuro")
         // al browser: solo l'indirizzo del server, con lo schema di ritorno dell'app
         XCTAssertEqual(browser.aperti.count, 1)
-        XCTAssertEqual(browser.aperti.first?.url.absoluteString, "https://accesso.example.invalid/auth?s=1")
+        XCTAssertEqual(browser.aperti.first?.url.absoluteString, "https://accounts.google.com/o/oauth2/v2/auth?s=1")
         XCTAssertEqual(browser.aperti.first?.schema, "schieraxi")
         // al server: la sfida all'inizio, il verificatore (che la produce) alla fine; mai insieme
         let inizio = try corpo(s, "google/inizia"), fine = try corpo(s, "social/scambio")
@@ -296,8 +298,9 @@ final class SessioneGoogleTests: XCTestCase {
     func testCollegaGoogle() async throws {
         let s = server(scambio: #"{"stato": "collegato", "accessi": {"password": true, "social": [{"provider": "google", "email": "a@example.invalid"}], "disponibili": ["google"]}}"#)
         let sess = sessione(s)
-        try await sess.collegaGoogle(avvio: AvvioFinto(codice: "c"))
+        try await sess.collegaGoogle(password: "p", avvio: AvvioFinto(codice: "c"))
         XCTAssertEqual(try corpo(s, "google/inizia")["scopo"] as? String, "collega")
+        XCTAssertEqual(try corpo(s, "google/inizia")["password"] as? String, "p")
         XCTAssertEqual(sess.accessi?.google?.email, "a@example.invalid")
         XCTAssertTrue(sess.accessi?.puoScollegareGoogle ?? false)
     }
@@ -384,7 +387,7 @@ final class SessioneGoogleTests: XCTestCase {
         let s = server(scambio: #"{"stato": "collegato", "accessi": {"password": true, "social": [{"provider": "google"}]}}"#)
         let sess = sessione(s)
         archivio.salva("tok", server: s.indirizzo)
-        try await sess.collegaGoogle(avvio: AvvioFinto(codice: "c"))
+        try await sess.collegaGoogle(password: "p", avvio: AvvioFinto(codice: "c"))
         XCTAssertNotNil(sess.accessi)
         await sess.esci()
         XCTAssertNil(sess.accessi)
@@ -409,7 +412,7 @@ final class SessioneGoogleTests: XCTestCase {
         // collegato e riconfermato
         finto.risposte["/api/account/social/scambio"] = #"{"stato": "collegato", "accessi": {"password": true, "social": [{"provider": "google"}]}}"#
         let due = sessione(finto)
-        try await due.collegaGoogle(avvio: AvvioFinto(codice: "c"))
+        try await due.collegaGoogle(password: "p", avvio: AvvioFinto(codice: "c"))
         XCTAssertNotNil(due.accessi?.google)
         finto.risposte["/api/account/social/scambio"] = #"{"stato": "riconfermato"}"#
         try await sessione(finto).riconfermaGoogle(avvio: AvvioFinto(codice: "c"))
