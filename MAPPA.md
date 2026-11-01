@@ -40,7 +40,7 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 
 ## Da NON cambiare (rompe SideStore/aggiornamenti/dati dell'utente)
 - Bundle id `it.tommaso.schieraxi` (e `it.tommaso.schieraxi.aggiorna` per il task in background, estensione widget col suo id): cambiarlo = app nuova, perso il rinnovo e l'App ID gratuito (limite 3 app, il widget ne usa uno in piu').
-- Schema URL `schieraxi://` (`oggi`, `formazione`, `mercato`, `scambi`, `lega`, `giocatore/<id>`): usato dalle notifiche ntfy con intestazione `Click`.
+- Schema URL `schieraxi://` (`oggi`, `formazione`, `mercato`, `scambi`, `lega`, `giocatore/<id>`, e `social?codice=...` / `social?errore=...` che riceve solo la finestra di accesso con Google): usato dalle notifiche ntfy con intestazione `Click`.
 - Bundle id, App Group, schema, target e IPA usano lo slug `schieraxi`. Il cambio di bundle id (31/10/2026) ha reso l'app una app NUOVA per SideStore: accesso da rifare, widget da riaggiungere, la vecchia app va cancellata a mano. I formati di copia di sicurezza vecchi si leggono ancora (`FileBackup.formatiVecchi`, da togliere dopo 30 giorni).
 - Nomi delle icone alternative (`AppIcon-blu|viola|arancio|rosso|grafite`) in `project.yml` e nell'asset catalog: il workflow IPA controlla che siano dichiarate.
 - I target di test NON devono finire nell'IPA (controllato dal workflow). `Config/Info.plist` e' generato e ignorato da git.
@@ -52,3 +52,9 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 - Se SideStore protesta per i limiti, si toglie il target `SchieraxiWidget` e la riga `dependencies` da `project.yml`.
 - Modalita' demo: argomento di lancio `-DEMO` (+ `-DEMO_SCHERMATA`, `-DEMO_FONDO`, `-DEMO_ORIENTAMENTO`, `-DEMO_CERCA`); in demo l'indirizzo vero non compare e il Keychain non si usa. I test UI e gli screenshot dipendono da questo: non romperlo.
 - Concorrenza dei workflow: ogni workflow ha il gruppo `workflow + ramo` e annulla la corsa vecchia; su `main` `ipa.yml` NON annulla la build in corso (può essere la release). `ipa.yml` ha bisogno di `contents: write` per la release.
+
+## Accesso con Google (1/11/2026)
+- Il giro lo fa il SERVER; l'app apre nel browser di sistema (`ASWebAuthenticationSession`, `Support/AvvioWeb.swift`, niente SDK di Google) l'indirizzo di `POST /api/account/social/google/inizia`, riceve `schieraxi://social?codice=...` e lo riscatta con `POST .../social/scambio` (codice monouso di 60 secondi + verificatore PKCE, che resta solo in memoria). Nessun identificativo di Google nel codice.
+- I pulsanti compaiono SOLO se il server dichiara `social: ["google"]` (nel 401 e in `/api/account/me`): si ricorda in `ServiziSociali` (UserDefaults `serviziSociali`). Spento = tutto invisibile.
+- Logica pura e testata: `Domain/AccessoSocial.swift` (PKCE, ritorno, risposte tolleranti, frasi dei codici d'errore). Sessione: `SessioneAccount` (`accediConGoogle`, `completaConGoogle`, `collegaGoogle`, `riconfermaGoogle`, `scollegaGoogle`, `impostaPassword`). Schermate: `Presentation/Accesso/AccessoGoogleView.swift`.
+- Errori del server con campo `codice` -> `ErroreApi.codificato` (es. `serve_riconferma`, `ultimo_accesso`, `email_gia_usata`).
