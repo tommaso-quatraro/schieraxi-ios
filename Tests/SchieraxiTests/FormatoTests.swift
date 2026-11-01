@@ -10,9 +10,26 @@ final class FormatoTests: XCTestCase {
         XCTAssertEqual(Formato.decimali(6, cifre: 2), "6,00")
     }
 
-    func testPuntiConValoreMancanteVaZero() {
-        XCTAssertEqual(Formato.punti(nil), "0,0")
+    func testPuntiConValoreMancanteSiScriveTrattino() {
+        XCTAssertEqual(Formato.punti(nil), "–", "come la web: un valore assente non è zero")
         XCTAssertEqual(Formato.punti(7.44), "7,4")
+    }
+
+    func testArrotondaComeLaWeb() {
+        // toFixed della web: a metà si va lontano dallo zero, non al pari
+        XCTAssertEqual(Formato.decimali(6.25), "6,3")
+        XCTAssertEqual(Formato.decimali(0.5, cifre: 0), "1")
+        XCTAssertEqual(normalizza(Formato.decimali(-6.25)), "-6,3")
+        XCTAssertEqual(Formato.decimali(-0.04), "0,0", "niente «-0,0»")
+        XCTAssertEqual(Formato.punti(6.25), "6,3")
+        XCTAssertEqual(Formato.conSegno(1.25), "+1,3")
+    }
+
+    func testValoreAssenteONonFinitoSiScriveTrattino() {
+        XCTAssertEqual(Formato.decimali(nil), "–")
+        XCTAssertEqual(Formato.decimali(.nan), "–")
+        XCTAssertEqual(Formato.decimali(.infinity, cifre: 2), "–")
+        XCTAssertEqual(Formato.decimali(1e300).isEmpty, false, "numeri enormi: niente crash")
     }
 
     func testConSegno() {

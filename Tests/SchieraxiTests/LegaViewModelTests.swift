@@ -79,8 +79,11 @@ final class LegaViewModelTests: XCTestCase {
         XCTAssertFalse(vm.puoArchiviare, "prima di sapere lo stato non si archivia")
         await vm.carica()
         XCTAssertTrue(vm.puoArchiviare)
+        VersioniRisorse.condivise.imposta("\"vecchia\"", server: adesso.indirizzo, risorsa: "scelta:9")
         await vm.archiviaERiparti()
         XCTAssertTrue(vm.archiviata)
+        XCTAssertNil(VersioniRisorse.condivise.leggi(server: adesso.indirizzo, risorsa: "scelta:9"),
+                     "dopo la nuova stagione gli ETag ricordati sono vecchi: si dimenticano")
         XCTAssertEqual(adesso.quante("POST /api/nuova-stagione"), 1)
         XCTAssertFalse(vm.puoArchiviare, "una volta archiviata non si archivia di nuovo")
         await vm.archiviaERiparti()
