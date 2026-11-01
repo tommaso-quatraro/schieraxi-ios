@@ -20,6 +20,16 @@ final class MessaggiErroreTests: XCTestCase {
         XCTAssertEqual(SchermataAccesso.testoErrore(ErroreApi.rete("x")), ErroreApi.testoNonRaggiungibile)
     }
 
+    func testIlMessaggioDelLimiteRestaUnaFraseIntera() {
+        // il testo vero del server per l'accesso
+        XCTAssertEqual(ErroreApi.troppiTentativi("Troppi tentativi sbagliati: aspetta prima di riprovare", riprovaTra: 45).errorDescription,
+                       "Troppi tentativi sbagliati. Riprova tra 45 secondi.")
+        XCTAssertEqual(ErroreApi.troppiTentativi("Per oggi basta. Riprova domani.", riprovaTra: 600).errorDescription,
+                       "Per oggi basta. Riprova tra 10 minuti.")
+        XCTAssertEqual(ErroreApi.troppiTentativi("Prima di riprovare aspetta un attimo.", riprovaTra: 30).errorDescription,
+                       "Prima di riprovare aspetta un attimo. Riprova tra 30 secondi.")
+    }
+
     func testRiprovaTraPocoNonEUnLimite() {
         XCTAssertFalse(ErroreVista.eLimite(ErroreApi.timeout.errorDescription ?? ""))
         XCTAssertFalse(ErroreVista.eLimite(ErroreApi.risposta(500).errorDescription ?? ""))

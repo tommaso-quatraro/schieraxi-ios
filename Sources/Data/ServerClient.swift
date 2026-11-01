@@ -113,10 +113,14 @@ enum ErroreApi: LocalizedError {
         return resto == 0 ? "\(ore) h" : "\(ore) h \(resto) min"
     }
 
-    /// Il messaggio senza le frasi che cominciano con «Riprova» (le sostituisce il tempo che manca).
+    /// Il messaggio senza le frasi che cominciano con «Riprova» e senza «aspetta prima di riprovare» (li sostituisce il tempo
+    /// che manca), chiuso da un punto. Prima «riprovare» perdeva solo la parola: «aspetta prima di Riprova tra 45 secondi».
     static func senzaInvitoARiprovare(_ messaggio: String) -> String {
-        let pulito = messaggio.replacingOccurrences(of: #"\s*Riprova[^.!]*[.!]?"#, with: "", options: [.regularExpression, .caseInsensitive])
-        return pulito.trimmingCharacters(in: .whitespacesAndNewlines)
+        var pulito = messaggio.replacingOccurrences(of: #"\s*\bRiprova\b[^.!]*[.!]?"#, with: "", options: [.regularExpression, .caseInsensitive])
+        pulito = pulito.replacingOccurrences(of: #"\s*[:,;]?\s*aspetta prima di riprovare[.!]?"#, with: "", options: [.regularExpression, .caseInsensitive])
+        pulito = pulito.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let ultimo = pulito.last, !".!?".contains(ultimo) { pulito += "." }
+        return pulito
     }
 
     /// Un limite raggiunto (429): riprovare subito non serve a niente.

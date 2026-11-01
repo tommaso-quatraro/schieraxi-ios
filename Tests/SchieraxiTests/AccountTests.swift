@@ -173,7 +173,7 @@ final class ServerHTTPAccountTests: XCTestCase {
             guard case .troppiTentativi(let messaggio, let attesa) = e else { return XCTFail("errore sbagliato: \(e)") }
             XCTAssertEqual(messaggio, "Troppi tentativi")
             XCTAssertEqual(attesa, 30)
-            XCTAssertEqual(e.errorDescription, "Troppi tentativi Riprova tra 30 secondi.")
+            XCTAssertEqual(e.errorDescription, "Troppi tentativi. Riprova tra 30 secondi.")
         }
     }
 
