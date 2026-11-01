@@ -154,7 +154,7 @@ struct VistaOsservato: View {
     /// «Dubbio 55%», «Infortunato»; nil se e' tutto a posto.
     private func avviso(_ g: GiocatoreWidget) -> String? {
         let s = g.descrizioneStato
-        return (s.isEmpty || s == "Disponibile") ? nil : s
+        return s.isEmpty ? nil : s
     }
 
     @ViewBuilder

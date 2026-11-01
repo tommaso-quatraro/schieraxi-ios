@@ -30,8 +30,15 @@ final class QuandoTests: XCTestCase {
         XCTAssertNil(Quando.data(nil))
         XCTAssertNil(Quando.data(""))
         XCTAssertNil(Quando.data("domani sera"))
-        // la «T» di ISO 8601 non è il formato del server: chi la riceve la sostituisce con uno spazio prima (vedi Lega)
-        XCTAssertNil(Quando.data("2026-10-27T18:30"))
+    }
+
+    func testAccettaLaTDiISO() throws {
+        // `ultimo_aggiornamento` arriva con la «T» (widget Stato: prima diceva sempre «Dati delle —»)
+        let conT = try XCTUnwrap(Quando.data("2026-10-26T23:55:13"))
+        XCTAssertEqual(conT, Quando.data("2026-10-26 23:55"))
+        XCTAssertEqual(roma.component(.hour, from: conT), 23)
+        XCTAssertEqual(roma.component(.minute, from: conT), 55)
+        XCTAssertNotNil(Quando.data("2026-10-27T18:30"))
     }
 
     func testLeggibileInItaliano() {

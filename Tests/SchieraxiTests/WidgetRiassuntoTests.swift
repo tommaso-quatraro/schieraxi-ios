@@ -12,13 +12,13 @@ final class WidgetRiassuntoTests: XCTestCase {
        "panchina": [10, 11, 12]},
      "avvisi": [{"id": 5, "nome": "Leonel Marteni", "ruolo": "A", "tipo": "dubbio", "in_formazione": true, "p_voto": 0.55},
                 {"id": 7, "nome": "Riserva", "ruolo": "C", "tipo": "infortunato", "in_formazione": false}],
-     "rosa": [{"id": 1, "nome": "Ivo Sorvani", "ruolo": "P", "avversario": "roma", "in_casa": true, "data_partita": "2026-10-31 20:45", "stato": "disponibile", "percentuale": 98, "dubbio": false, "diffidato": false, "titolare": true, "rigorista": false, "punti_attesi": 6.1},
-              {"id": 5, "nome": "Leonel Marteni", "ruolo": "A", "avversario": "milan", "in_casa": false, "data_partita": "2026-10-31 18:30", "stato": "dubbio", "percentuale": 55, "dubbio": true, "diffidato": false, "titolare": true, "rigorista": true},
+     "rosa": [{"id": 1, "nome": "Ivo Sorvani", "ruolo": "P", "avversario": "roma", "in_casa": true, "data_partita": "2026-10-31 20:45", "stato": "titolare", "percentuale": 98, "dubbio": false, "diffidato": false, "titolare": true, "rigorista": false, "punti_attesi": 6.1},
+              {"id": 5, "nome": "Leonel Marteni", "ruolo": "A", "avversario": "milan", "in_casa": false, "data_partita": "2026-10-31 18:30", "stato": "titolare", "percentuale": 55, "dubbio": true, "diffidato": false, "titolare": true, "rigorista": true},
               {"id": 7, "nome": "Riserva", "ruolo": "C", "avversario": "lazio", "in_casa": true, "data_partita": "2026-10-31 15:00", "stato": "infortunato", "titolare": false},
-              {"id": 8, "nome": "Senza Partita", "ruolo": "D", "stato": "disponibile"}],
+              {"id": 8, "nome": "Senza Partita", "ruolo": "D", "stato": "non_convocato"}],
      "squalificati": [9], "diffidati": [2], "rigoristi": [5],
      "diario": [{"giornata": 10, "attesi": 66.0, "fatti": 63.5}, {"giornata": 9, "attesi": 67.0, "fatti": 71.0}],
-     "osservati": [{"id": 30, "nome": "Osservato", "ruolo": "A", "voto_atteso": 6.8, "punti_attesi": 7.1, "avversario": "inter", "in_casa": true, "data_partita": "2026-11-01 12:30", "stato": "disponibile", "percentuale": 90}],
+     "osservati": [{"id": 30, "nome": "Osservato", "ruolo": "A", "voto_atteso": 6.8, "punti_attesi": 7.1, "avversario": "inter", "in_casa": true, "data_partita": "2026-11-01 12:30", "stato": "titolare", "percentuale": 90}],
      "dati": {"ultimo_aggiornamento": "2026-10-30 14:32"},
      "scambio": {"mia": "Schiera FC", "altra": "Real Madrink", "do": [{"id": 1, "nome": "A", "ruolo": "C"}], "ricevo": [{"id": 2, "nome": "B", "ruolo": "C"}], "guadagno_mio": 2.4, "guadagno_loro": 1.1},
      "svincolato": {"esce": {"id": 7, "nome": "Riserva", "ruolo": "C"}, "entra": {"id": 40, "nome": "Svincolato", "ruolo": "C", "quotazione": 12}, "guadagno": 2.5, "fattibile": true},
@@ -96,8 +96,26 @@ final class WidgetRiassuntoTests: XCTestCase {
         let w = try riassunto()
         XCTAssertEqual(w.rosa?[1].descrizioneStato, "Dubbio 55%")
         XCTAssertEqual(w.rosa?[2].descrizioneStato, "Infortunato")
-        XCTAssertEqual(w.rosa?[0].descrizioneStato, "Disponibile")
+        XCTAssertEqual(w.rosa?[0].descrizioneStato, "", "titolare: niente da segnalare")
+        XCTAssertEqual(w.rosa?[3].descrizioneStato, "Non convocato", "senza trattino basso")
         XCTAssertEqual(w.avvisi?.first?.descrizioneStato, "Dubbio 55%")
+    }
+
+    func testGliStatiVeriDelServer() throws {
+        func stato(_ json: String) throws -> String {
+            let d = JSONDecoder()
+            d.keyDecodingStrategy = .convertFromSnakeCase
+            return try d.decode(GiocatoreWidget.self, from: Data(json.utf8)).descrizioneStato
+        }
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "titolare"}"#), "")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "panchina"}"#), "Panchina")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "non_convocato"}"#), "Non convocato")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "infortunato", "dubbio": true}"#), "Infortunato", "l'assenza vince sul dubbio")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "squalificato"}"#), "Squalificato")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "titolare", "dubbio": true, "percentuale": 60}"#), "Dubbio 60%")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "titolare", "dubbio": true}"#), "Dubbio")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A", "stato": "stato_nuovo"}"#), "Stato nuovo")
+        XCTAssertEqual(try stato(#"{"id": 1, "nome": "A"}"#), "")
     }
 
     func testIlRiassuntoVecchioDeiWidgetViene() throws {
