@@ -119,3 +119,63 @@ final class GiornataLegaTests: XCTestCase {
         XCTAssertEqual(f.etichettaGiornata, "Giornata \(f.giornata)")
     }
 }
+
+/// Account nuovo, calendario non pronto o stagione finita: il server manda `giornata: null` (o non manda campi). Nessun errore, nessun crash.
+final class OggiSenzaGiornataTests: XCTestCase {
+    private func leggi(_ json: String) throws -> Oggi {
+        try Decodifica.decodifica(Data(json.utf8))
+    }
+
+    private let nuovoSenzaRose = """
+    {"giornata": null, "inizio": null, "scadenza": null, "giornata_lega": null, "iniziata": false, "con_probabili": false,
+     "formazione": null, "avvisi": [], "migliori": [], "partite": [], "da_fare": [], "senza_rose": true}
+    """
+
+    func testGiornataNullSiLegge() throws {
+        let o = try leggi(nuovoSenzaRose)
+        XCTAssertNil(o.giornata)
+        XCTAssertNil(o.giornataMostrata)
+        XCTAssertNil(o.etichettaGiornata)
+        XCTAssertTrue(o.senzaGiornata)
+        XCTAssertEqual(o.senzaRose, true)
+        XCTAssertNil(o.chiusura)
+    }
+
+    func testCampiMancantiESoloGraffe() throws {
+        let vuoto = try leggi("{}")
+        XCTAssertNil(vuoto.giornata)
+        XCTAssertNil(vuoto.senzaRose)
+        XCTAssertNil(vuoto.formazione)
+        XCTAssertNil(vuoto.avvisi)
+        XCTAssertNil(try leggi(#"{"senza_rose": true}"#).giornata)
+    }
+
+    func testConLaSolaGiornataDiLegaMaSenzaSerieA() throws {
+        // la giornata di Serie A manca: non si inventa niente, nemmeno dal numero della lega
+        let o = try leggi(#"{"giornata": null, "giornata_lega": 3}"#)
+        XCTAssertNil(o.etichettaGiornata)
+        XCTAssertEqual(o.giornataMostrata, 3)
+    }
+
+    func testIlWidgetEilRiassuntoNonSiRompono() throws {
+        let o = try leggi(nuovoSenzaRose)
+        let r = RiassuntoOggi(oggi: o)
+        XCTAssertNil(r.giornata)
+        XCTAssertEqual(r.etichettaGiornata, "Nessuna giornata")
+        XCTAssertEqual(r.siglaGiornata, "G–")
+        // salvato e riletto (come fa il file condiviso)
+        let dati = try JSONEncoder().encode(r)
+        XCTAssertEqual(try JSONDecoder().decode(RiassuntoOggi.self, from: dati), r)
+        // il widget completo senza giornata non fa crollare la lettura
+        let w = RiassuntoWidget.leggi(Data(#"{"giornata": null, "senza_rose": true}"#.utf8))
+        XCTAssertNotNil(w)
+        XCTAssertNil(w?.comeRiassuntoOggi())
+    }
+
+    func testSiriENotificheSenzaGiornata() throws {
+        let o = try leggi(nuovoSenzaRose)
+        XCTAssertTrue(Aggiornamento.corpoProbabili(o, modulo: "3-5-2", punti: "66,0").hasPrefix("Prossima giornata:"))
+        XCTAssertTrue(Aggiornamento.corpoCambioModulo(o, modulo: "3-5-2", punti: "66,0", moduloPrima: "4-3-3").hasPrefix("Mister, prossima giornata:"))
+        XCTAssertFalse(FormazioneComando.fraseBase(o, modulo: "3-5-2", punti: "66,0").contains("nil"))
+    }
+}

@@ -132,7 +132,8 @@ final class CaricatoreTests: XCTestCase {
     }
 
     func testErroreDiDecodificaNonRompeNiente() async throws {
-        let server = ServerDiProva { _, _, _ in Data("{\"altro\": 1}".utf8) }
+        let server = ServerDiProva { _, _, _ in Data("[1, 2]".utf8) }
+        // «Oggi» ha tutti i campi opzionali: un oggetto vuoto è valido, l'errore vero è una forma sbagliata
         let c = Caricatore<Oggi>("/api/oggi", cache: false, ascolta: false, server: server)
         await c.ricarica()
         XCTAssertNil(c.dato)

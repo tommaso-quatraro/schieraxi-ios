@@ -257,6 +257,20 @@ final class TokenWidgetTests: XCTestCase {
         XCTAssertFalse(TokenWidget.daRinnovare(token: "fw_x", scade: "2027-02-01T12:00:00", adesso: adesso))
     }
 
+    func testLaScadenzaConFusoNonEOraItaliana() {
+        // 12:00 UTC = 13:00 italiane: con il fuso vale quello, senza fuso e' ora italiana
+        let utc = TokenWidget.leggiScadenza("2027-01-20T12:00:00+00:00")
+        let italiana = TokenWidget.leggiScadenza("2027-01-20T13:00:00")
+        XCTAssertNotNil(utc)
+        XCTAssertEqual(utc, italiana)
+        XCTAssertEqual(TokenWidget.leggiScadenza("2027-01-20T12:00:00.123456+00:00"), utc)
+        XCTAssertEqual(TokenWidget.leggiScadenza("2027-01-20T12:00:00Z"), utc)
+        let adesso = ISO8601DateFormatter().date(from: "2027-01-13T12:30:00Z") ?? Date()
+        // mancano 6 giorni e 23 ore e mezza: si rinnova; con la lettura sbagliata (UTC come ora italiana) sarebbe 7 giorni e 30 minuti
+        XCTAssertTrue(TokenWidget.daRinnovare(token: "fw_x", scade: "2027-01-20T12:00:00+00:00", adesso: adesso))
+        XCTAssertFalse(TokenWidget.daRinnovare(token: "fw_x", scade: "2027-01-20T13:00:00+00:00", adesso: adesso))
+    }
+
     func testUnTokenStranoDelServerNonSiSalva() async {
         let s = server { _, _ in Data(#"{"token": "sessione-finta", "scade": "2027-01-28T12:00:00"}"#.utf8) }
         await TokenWidget.assicura(server: s, memoria: memoria)

@@ -256,8 +256,14 @@ final class ModelliTests: XCTestCase {
         XCTAssertNil(o.avvisi)
     }
 
+    func testOggiVuotoSiLeggeSenzaErrore() throws {
+        // account nuovo: «Oggi» ha tutti i campi opzionali, un oggetto vuoto non è un errore
+        let o: Oggi = try Decodifica.decodifica(Data("{}".utf8))
+        XCTAssertNil(o.giornata)
+    }
+
     func testErroreDiDecodificaDaUnMessaggioInItaliano() {
-        XCTAssertThrowsError(try Decodifica.decodifica(Data("{}".utf8)) as Oggi) { errore in
+        XCTAssertThrowsError(try Decodifica.decodifica(Data("[1, 2]".utf8)) as Oggi) { errore in
             XCTAssertTrue(errore.localizedDescription.hasPrefix("Il server ha mandato una risposta"), errore.localizedDescription)
         }
     }
