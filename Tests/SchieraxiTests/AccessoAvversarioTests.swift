@@ -399,7 +399,11 @@ final class SessioneAvversariaTests: XCTestCase {
     }
 
     func testUn401InRitardoDiUnaRichiestaVecchiaNonButtaFuoriLaSessioneNuova() async {
-        let server = ServerDiProva { _, _, _ in Data("{}".utf8) }
+        // il ricontrollo con /api/account/me conferma che la sessione è finita
+        let server = ServerDiProva { _, p, _ in
+            if p == "/api/account/me" { throw ErroreApi.accessoRichiesto("Accesso richiesto") }
+            return Data("{}".utf8)
+        }
         archivio.salva("token-nuovo", server: server.indirizzo)
         let s = sessione(server)
         NotificationCenter.default.post(name: .accessoRichiesto, object: nil,
@@ -411,6 +415,37 @@ final class SessioneAvversariaTests: XCTestCase {
                                         userInfo: ["server": server.indirizzo, "impronta": "token-nuovo".hashValue])
         for _ in 0..<100 where s.stato != .daAccedere { try? await Task.sleep(nanoseconds: 20_000_000) }
         XCTAssertEqual(s.stato, .daAccedere, "con il token giusto invece sì")
+    }
+
+    func testUn401SospettoNonButtaFuoriSeIlServerDiceCheLaSessioneVale() async {
+        let server = ServerDiProva { _, p, _ in
+            if p == "/api/account/me" {
+                return Data("{\"multiutente\": true, \"utente\": {\"id\": 7, \"nome_utente\": \"mister\", \"ruolo\": \"utente\"}}".utf8)
+            }
+            return Data("{}".utf8)
+        }
+        archivio.salva("tok", server: server.indirizzo)
+        let s = sessione(server)
+        NotificationCenter.default.post(name: .accessoRichiesto, object: nil, userInfo: ["server": server.indirizzo, "impronta": "tok".hashValue])
+        for _ in 0..<50 where server.quante("/api/account/me") == 0 { try? await Task.sleep(nanoseconds: 20_000_000) }
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(server.quante("/api/account/me"), 1, "prima di buttare il token si chiede al server")
+        XCTAssertNotEqual(s.stato, .daAccedere)
+        XCTAssertEqual(archivio.leggi(server: server.indirizzo), "tok")
+        XCTAssertEqual(pulizie, 0)
+    }
+
+    func testUn401SospettoConLaReteAssenteNonButtaFuori() async {
+        let server = ServerDiProva { _, p, _ in
+            if p == "/api/account/me" { throw ErroreApi.rete("senza rete") }
+            return Data("{}".utf8)
+        }
+        archivio.salva("tok", server: server.indirizzo)
+        let s = sessione(server)
+        NotificationCenter.default.post(name: .accessoRichiesto, object: nil, userInfo: ["server": server.indirizzo, "impronta": "tok".hashValue])
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertNotEqual(s.stato, .daAccedere)
+        XCTAssertEqual(archivio.leggi(server: server.indirizzo), "tok")
     }
 
     // MARK: cambio server con la sessione aperta
