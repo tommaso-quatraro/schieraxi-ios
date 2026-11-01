@@ -256,52 +256,6 @@ final class DiarioEBackupTests: XCTestCase {
         XCTAssertEqual(FileBackup.nomeFile(Data(#"{"creato": "../../etc/x"}"#.utf8)), "schieraxi-backup.json", "niente percorsi nel nome")
         XCTAssertEqual(FileBackup.nomeFile(Data("{}".utf8)), "schieraxi-backup.json")
     }
-
-    @MainActor
-    func testScaricareIlBackupScriveUnFileTemporaneoERipulisce() async throws {
-        let server = FinteServer(risposte: ["/api/backup": Self.backupProva])
-        let vm = BackupViewModel(server: server)
-        await vm.prepara()
-        let url = try XCTUnwrap(vm.file)
-        XCTAssertTrue(vm.riuscito, vm.messaggio ?? "")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
-        XCTAssertEqual(url.lastPathComponent, "schieraxi-backup-2026-10-30.json")
-        vm.pulisci()
-        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
-        XCTAssertNil(vm.file)
-    }
-
-    @MainActor
-    func testUnBackupSbagliatoNonViaggiaAlServer() async throws {
-        let cartella = FileManager.default.temporaryDirectory.appendingPathComponent("prova-backup-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: cartella) }
-        let url = cartella.appendingPathComponent("finto.json")
-        try Data(#"{"ciao": 1}"#.utf8).write(to: url)
-        let vm = BackupViewModel(server: FinteServer(risposte: [:]))
-        await vm.scegli(.success([url]))
-        XCTAssertNil(vm.daRipristinare)
-        XCTAssertFalse(vm.chiediConferma)
-        XCTAssertFalse(vm.riuscito)
-        XCTAssertEqual(vm.messaggio, FileBackup.Errore.nonEUnBackup.localizedDescription)
-    }
-
-    @MainActor
-    func testUnBackupBuonoChiedeConfermaPoiRipristina() async throws {
-        let cartella = FileManager.default.temporaryDirectory.appendingPathComponent("prova-backup-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: cartella) }
-        let url = cartella.appendingPathComponent("buono.json")
-        try Data(Self.backupProva.utf8).write(to: url)
-        let vm = BackupViewModel(server: FinteServer(risposte: ["/api/backup/ripristina": #"{"ripristinati": ["dati/osservati.json"]}"#]))
-        await vm.scegli(.success([url]))
-        XCTAssertTrue(vm.chiediConferma)
-        XCTAssertNotNil(vm.daRipristinare)
-        await vm.ripristina()
-        XCTAssertNil(vm.daRipristinare)
-        XCTAssertTrue(vm.riuscito, vm.messaggio ?? "")
-        XCTAssertTrue((vm.messaggio ?? "").contains("Ripristino completato"))
-    }
 }
 
 /// Il nome «SchieraXI» con XI maiuscolo e il marchio sempre vivo, anche con «Ridurre movimento».

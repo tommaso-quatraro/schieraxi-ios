@@ -28,7 +28,7 @@ final class FunzioniLegaTests: XCTestCase {
          {"id": "5", "tipo": "rose", "testo": "Rose"}]
         """#)
         XCTAssertEqual(o.cose(funzioni: .tutteAccese, tecniche: false).map(\.id), ["1", "5"])
-        XCTAssertEqual(o.cose(funzioni: .tutteAccese, tecniche: true).map(\.id), ["1", "2", "3", "4", "5"])
+        XCTAssertEqual(o.cose(funzioni: .tutteAccese, tecniche: true).map(\.id), ["1", "2", "3", "5"], "la copia di sicurezza non si fa dall'app")
     }
 
     func testLeCoseDiUnaFunzioneSpentaNonSiVedono() throws {

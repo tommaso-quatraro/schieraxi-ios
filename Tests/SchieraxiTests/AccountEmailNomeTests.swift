@@ -1,16 +1,42 @@
 import XCTest
 @testable import Schieraxi
 
-// Maiuscole del nome ed email dell'account: controlli leggeri sul telefono e lettura tollerante della risposta di `/api/account/me`.
+// Email dell'account: controlli leggeri sul telefono, cosa mostra «Il tuo account» e lettura tollerante della risposta di `/api/account/me`.
 // Solo indirizzi finti (example.invalid).
 
 final class AccountEmailNomeTests: XCTestCase {
-    func testMaiuscoleDelNome() {
-        XCTAssertNil(RegoleAccount.problemaMaiuscole("TuttoBene", nomeUtente: "tuttobene"))
-        XCTAssertNil(RegoleAccount.problemaMaiuscole("  Mister.Rossi ", nomeUtente: "mister.rossi"))
-        XCTAssertNotNil(RegoleAccount.problemaMaiuscole("", nomeUtente: "mister"))
-        XCTAssertNotNil(RegoleAccount.problemaMaiuscole("Mistero", nomeUtente: "mister"), "le lettere devono restare le stesse")
+    func testOrigineDellEmailEFacoltativa() throws {
+        let nuovo: RispostaAccount = try Decodifica.decodifica(Data(#"{"multiutente": true, "email": "g@example.invalid", "email_origine": "google"}"#.utf8))
+        XCTAssertEqual(nuovo.emailOrigine, "google")
+        let vecchio: RispostaAccount = try Decodifica.decodifica(Data(#"{"multiutente": true, "email": "a@example.invalid"}"#.utf8))
+        XCTAssertNil(vecchio.emailOrigine)
+        let voce: DaFareVoce = try Decodifica.decodifica(Data(#"{"id": "x", "testo": "Ciao", "motivo": "Perché sì"}"#.utf8))
+        XCTAssertEqual(voce.motivo, "Perché sì")
+        let senza: DaFareVoce = try Decodifica.decodifica(Data(#"{"id": "y", "testo": "Ciao"}"#.utf8))
+        XCTAssertNil(senza.motivo)
     }
+
+    func testLEmailDiGoogleCompareDaSola() {
+        XCTAssertEqual(ProfiloAccount.email(account: nil, inAttesa: nil, google: "g@example.invalid"), "g@example.invalid")
+        XCTAssertEqual(ProfiloAccount.email(account: "a@example.invalid", inAttesa: nil, google: "g@example.invalid"), "a@example.invalid",
+                       "l'email dell'account vince su quella di Google")
+        XCTAssertEqual(ProfiloAccount.email(account: " ", inAttesa: "x@example.invalid", google: nil), "x@example.invalid (da verificare)")
+        XCTAssertNil(ProfiloAccount.email(account: nil, inAttesa: nil, google: ""))
+        XCTAssertFalse(ProfiloAccount.mostraVoceEmail(googleCollegato: true), "con Google niente «Aggiungi un'email»")
+        XCTAssertTrue(ProfiloAccount.mostraVoceEmail(googleCollegato: false))
+    }
+
+    func testLeOpzioniDellAspettoTolteTornanoNormali() throws {
+        let nome = "prova-opzioni-\(UUID().uuidString)"
+        let memoria = try XCTUnwrap(UserDefaults(suiteName: nome))
+        defer { memoria.removePersistentDomain(forName: nome) }
+        memoria.set("rosso", forKey: "accento")
+        memoria.set("comoda", forKey: "densita")
+        memoria.set("formazione", forKey: "sezioneAvvio")
+        memoria.set("scuro", forKey: "tema")
+        OpzioniTolte.pulisci(memoria)
+        for chiave in OpzioniTolte.chiavi { XCTAssertNil(memoria.object(forKey: chiave), chiave) }
+        XCTAssertEqual(memoria.string(forKey: "tema"), "scuro", "il tema resta: si sceglie ancora")    }
 
     func testControlloEmail() {
         XCTAssertNil(RegoleAccount.problemaEmail("nome@example.invalid"))

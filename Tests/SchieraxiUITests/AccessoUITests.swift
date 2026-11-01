@@ -81,7 +81,14 @@ final class AccessoUITests: XCTestCase {
         attendi("Cambia password")
         attendi("Nuovo codice per recuperare l'accesso")
         attendi("Elimina l'account")
-        XCTAssertTrue(app.buttons["Esci"].exists)
+        // un solo nome e niente voci tolte (maiuscole del nome, esci da tutti i telefoni)
+        XCTAssertFalse(elemento("Per accedere").exists)
+        XCTAssertFalse(elemento("Cambia le maiuscole del nome").exists)
+        XCTAssertFalse(elemento("Esci da tutti", contiene: true).exists)
+        // «Esci» è l'ultima voce delle Impostazioni: si scorre fino in fondo
+        let esci = app.buttons["Esci"]
+        for _ in 0..<8 where !esci.exists { app.swipeUp() }
+        XCTAssertTrue(esci.waitForExistence(timeout: 5))
     }
 
     func testRetAssenteDiceCosaFare() {

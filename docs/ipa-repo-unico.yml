@@ -89,8 +89,8 @@ jobs:
           ! /usr/libexec/PlistBuddy -c "Print :FantaHost" Payload/Schieraxi.app/Info.plist 2>/dev/null
           ! /usr/libexec/PlistBuddy -c "Print :FantaHost" Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/Info.plist 2>/dev/null
           if grep -rqiE '[a-z0-9-]+[.]ts[.]net' Payload; then echo "ERRORE: un indirizzo ts.net e' dentro l'IPA"; exit 1; fi
-          # le icone alternative (Lega > Icona dell'app) devono essere dichiarate nell'Info.plist
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons" Payload/Schieraxi.app/Info.plist | head -n 20
+          # una sola icona: nessuna icona alternativa nell'Info.plist
+          if /usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons" Payload/Schieraxi.app/Info.plist >/dev/null 2>&1; then echo "ERRORE: ci sono icone alternative"; exit 1; fi
           # i target di test non devono finire nell'IPA
           ! ls Payload/Schieraxi.app/PlugIns | grep -i test
       - uses: actions/upload-artifact@v4
