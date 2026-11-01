@@ -160,6 +160,21 @@ final class CacheTests: XCTestCase {
         XCTAssertNil(altroPercorso)
     }
 
+    /// Scrivere, togliere e leggere vanno nell'ordine delle chiamate: una scrittura in ritardo non rimette la copia appena tolta
+    /// (era la causa di `testDopoUnRiavvioNonTornaLoStemmaVecchio` instabile) e la lettura subito dopo la scrittura la trova.
+    func testScritturaRimozioneELetturaInOrdine() async throws {
+        let indirizzo = "https://prova-ordine-\(UUID().uuidString).invalid"
+        for giro in 0..<50 {
+            Cache.salva(Data("vecchio-\(giro)".utf8), "/api/x", indirizzo: indirizzo, cartella: "img")
+            let subito = await Cache.leggi("/api/x", indirizzo: indirizzo, cartella: "img")
+            XCTAssertEqual(subito.map { String(decoding: $0.dati, as: UTF8.self) }, "vecchio-\(giro)", "giro \(giro): letta subito dopo la scrittura")
+            Cache.salva(Data("di nuovo".utf8), "/api/x", indirizzo: indirizzo, cartella: "img")
+            Cache.rimuovi("/api/x", indirizzo: indirizzo, cartella: "img")
+            let dopo = await Cache.leggi("/api/x", indirizzo: indirizzo, cartella: "img")
+            XCTAssertNil(dopo, "giro \(giro): la scrittura in coda non deve ricomparire dopo la rimozione")
+        }
+    }
+
     func testNomeFileStabileEDistinto() {
         XCTAssertEqual(Cache.nomeFile("/api/oggi", "https://a"), Cache.nomeFile("/api/oggi", "https://a"))
         XCTAssertNotEqual(Cache.nomeFile("/api/oggi", "https://a"), Cache.nomeFile("/api/oggi", "https://b"))
