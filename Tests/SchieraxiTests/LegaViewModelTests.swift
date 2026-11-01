@@ -64,7 +64,7 @@ final class LegaViewModelTests: XCTestCase {
     func testAggiornamentoNonPartito() async {
         let vm = AggiornaDatiViewModel(server: ServerDiProva.chePrecipita(.server("Richiesta non permessa")))
         await vm.avvia()
-        XCTAssertEqual(vm.messaggio, "Il server dice: Richiesta non permessa")
+        XCTAssertEqual(vm.messaggio, "Richiesta non permessa")
         XCTAssertFalse(vm.inCorso)
     }
 
@@ -108,7 +108,7 @@ final class LegaViewModelTests: XCTestCase {
         await vm.carica()
         await vm.archiviaERiparti()
         XCTAssertFalse(vm.archiviata)
-        XCTAssertEqual(vm.errore, "Il server dice: Nessuna rosa importata")
+        XCTAssertEqual(vm.errore, "Nessuna rosa importata")
     }
 
     func testLegaSaSeServeIlPassaggioDiStagione() async {
@@ -259,7 +259,7 @@ final class LegaViewModelTests: XCTestCase {
         vm.testoRose = "boh"
         await vm.importaTesto()
         XCTAssertNil(vm.esito)
-        XCTAssertEqual(vm.errore, "Il server dice: Nessuna rosa trovata")
+        XCTAssertEqual(vm.errore, "Nessuna rosa trovata")
     }
 
     func testMovimenti() async throws {

@@ -72,7 +72,7 @@ enum ErroreApi: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .server(let messaggio): return "Il server dice: \(messaggio)"
+        case .server(let messaggio): return messaggio   // già in italiano e pensato per chi usa l'app
         case .accessoRichiesto(let messaggio): return messaggio
         case .troppiTentativi(let messaggio, let attesa):
             guard let attesa, attesa > 0 else { return messaggio }
@@ -85,8 +85,8 @@ enum ErroreApi: LocalizedError {
             return IndirizzoServer.manca ? "Manca l'indirizzo del server: scrivilo nelle Impostazioni." : "L'indirizzo del server non è valido."
         case .risposta(let codice): return Self.testoRisposta(codice)
         case .dati: return "Il server ha mandato una risposta che l'app non capisce. Riprova tra poco; se succede ancora, aggiorna l'app."
-        case .timeout: return "Il server ci mette troppo a rispondere. Controlla la connessione e riprova tra poco."
-        case .rete: return "Non riesco a raggiungere il server. Controlla la connessione e che il server sia acceso."
+        case .timeout: return "SchieraXI ci mette troppo a rispondere. Controlla la connessione e riprova tra poco."
+        case .rete: return Self.testoNonRaggiungibile
         }
     }
 
@@ -94,10 +94,13 @@ enum ErroreApi: LocalizedError {
     /// sbagliato, non un guasto del server.
     static func testoRisposta(_ codice: Int) -> String {
         if codice == 401 || codice == 403 {
-            return "Il server ha rifiutato la richiesta (codice \(codice)). Controlla l'indirizzo del server e la rete (un Wi-Fi con accesso da fare, un blocco di rete) e riprova."
+            return "La richiesta è stata rifiutata. Se sei su un Wi-Fi pubblico apri prima la sua pagina di accesso, poi riprova."
         }
-        return "Il server ha un problema (codice \(codice)). Riprova tra poco."
+        return "SchieraXI ha un problema in questo momento. Riprova tra poco."
     }
+
+    /// Rete assente o server irraggiungibile: una sola frase in tutta l'app.
+    static let testoNonRaggiungibile = "Non riesco a collegarmi a SchieraXI. Controlla la connessione e riprova."
 
     /// Un'attesa in parole: «30 secondi», «10 minuti», «6 h 55 min», «2 giorni».
     static func tempoLeggibile(_ secondi: Int) -> String {

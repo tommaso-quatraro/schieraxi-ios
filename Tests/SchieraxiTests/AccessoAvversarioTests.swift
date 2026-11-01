@@ -164,7 +164,8 @@ final class ServerHTTPOstileTests: XCTestCase {
                 _ = try await server.grezzo("/api/oggi")
                 XCTFail("doveva lanciare")
             } catch {
-                XCTAssertEqual(error.localizedDescription, "Il server ha un problema (codice \(codice)). Riprova tra poco.")
+                XCTAssertEqual(error.localizedDescription, "SchieraXI ha un problema in questo momento. Riprova tra poco.", "codice \(codice)")
+                XCTAssertFalse(error.localizedDescription.contains("codice"), "niente codici tecnici")
                 XCTAssertFalse(error.localizedDescription.contains("<html"), "il corpo della risposta non finisce nei messaggi")
             }
         }
@@ -213,7 +214,7 @@ final class ServerHTTPOstileTests: XCTestCase {
         for corpo in corpi {
             ProtocolloFinto.gestore = { [unowned self] r in (risposta(r, 401), Data(corpo.utf8)) }
             do { _ = try await server.grezzo("/api/oggi"); XCTFail() } catch {
-                XCTAssertTrue(error.localizedDescription.contains("401"), "dice il codice, non \u{ab}sessione finita\u{bb}")
+                XCTAssertTrue(error.localizedDescription.contains("rifiutata"), "dice che è rifiutata, non \u{ab}sessione finita\u{bb}")
             }
         }
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -223,7 +224,7 @@ final class ServerHTTPOstileTests: XCTestCase {
 
     func testUnQuattrocentoTreSenzaJsonDiceCheLaRichiestaERifiutata() {
         let testo = ErroreApi.risposta(403).localizedDescription
-        XCTAssertTrue(testo.contains("rifiutato"))
+        XCTAssertTrue(testo.contains("rifiutata"))
         XCTAssertFalse(testo.contains("ha un problema"))
         XCTAssertTrue(ErroreApi.risposta(502).localizedDescription.contains("ha un problema"))
     }
