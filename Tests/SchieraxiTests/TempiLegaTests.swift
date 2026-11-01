@@ -28,6 +28,17 @@ final class TempiLegaTests: XCTestCase {
         XCTAssertEqual(try oggi(", \"giornata_lega\": 0").giornataMostrata, 10)
     }
 
+    func testGliAvvisiESiriDicianoLaGiornataDellaLega() throws {
+        // lega che parte dalla 4ª di Serie A: la 10ª di Serie A è la 7ª della lega, e l'app mostra «7»
+        let o = try oggi(", \"giornata_lega\": 7")
+        XCTAssertTrue(Aggiornamento.corpoCambioModulo(o, modulo: "3-5-2", punti: "66,0", moduloPrima: "4-3-3").hasPrefix("Mister, giornata 7:"))
+        XCTAssertTrue(Aggiornamento.corpoProbabili(o, modulo: "3-5-2", punti: "66,0").hasPrefix("Giornata 7:"))
+        XCTAssertTrue(FormazioneComando.fraseBase(o, modulo: "3-5-2", punti: "66,0").hasPrefix("Per la giornata 7 "))
+        // senza il numero della lega vale quello di Serie A
+        let senza = try oggi("")
+        XCTAssertTrue(Aggiornamento.corpoProbabili(senza, modulo: "3-5-2", punti: "66,0").hasPrefix("Giornata 10:"))
+    }
+
     func testIlRiassuntoDelWidgetUsaLaScadenza() throws {
         let o = try oggi(", \"scadenza\": \"2026-11-08 18:00\"")
         XCTAssertEqual(RiassuntoOggi(oggi: o).inizio, Quando.data("2026-11-08 18:00"))
