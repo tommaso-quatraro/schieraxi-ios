@@ -53,7 +53,7 @@ struct CollegaWidgetView: View {
             .navigationTitle("Widget")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .presentationDetents([.medium, .large])
+        // a tutta altezza: a metà, su iPad e con il testo grande, «Fatto» restava sotto la piega
         .presentationDragIndicator(.visible)
         .sensoryFeedback(.success, trigger: copie)
         .task { await copia() }
