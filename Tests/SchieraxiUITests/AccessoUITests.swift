@@ -20,6 +20,20 @@ final class AccessoUITests: XCTestCase {
         XCTAssertTrue(elemento(testo, contiene: contiene).waitForExistence(timeout: secondi), "non compare «\(testo)»", file: file, line: line)
     }
 
+    /// Tocca il pulsante `tocco` e aspetta il pulsante `atteso` della schermata d'arrivo. Sul simulatore carico di GitHub un tocco
+    /// a volte non arriva all'app (successo il 1/11/2026: dopo «Accedi» la scheda selezionata era ancora «Registrati»):invece di
+    /// toccare subito il pulsante dopo, si controlla l'effetto e, se manca, si ritocca (al massimo 3 volte, solo se il pulsante c'è ancora).
+    private func tocca(_ tocco: String, finchéCompare atteso: String, file: StaticString = #filePath, line: UInt = #line) {
+        let pulsante = app.buttons[tocco]
+        XCTAssertTrue(pulsante.waitForExistence(timeout: 10), "manca il pulsante «\(tocco)»", file: file, line: line)
+        var arrivato = false
+        for _ in 0..<3 where !arrivato {
+            if pulsante.exists { pulsante.tap() }
+            arrivato = app.buttons[atteso].waitForExistence(timeout: 10)
+        }
+        XCTAssertTrue(arrivato, "dopo «\(tocco)» non compare «\(atteso)»", file: file, line: line)
+    }
+
     func testAccessoConNomePasswordEPassaggioTraLeSchede() {
         avvia("accedi")
         let nome = app.textFields["Nome utente"]
@@ -31,17 +45,15 @@ final class AccessoUITests: XCTestCase {
         XCTAssertFalse(entra.isEnabled, "con i campi vuoti non si può entrare")
 
         // Registrati: compare il codice d'invito (il server non si vede: è nascosto nell'area avanzata)
-        app.buttons["Registrati"].tap()
+        tocca("Registrati", finchéCompare: "Crea l'account")
         attendi("Codice d'invito", contiene: true)
-        XCTAssertTrue(app.buttons["Crea l'account"].exists)
-        // Recupera: compare il codice di recupero
-        app.buttons["Accedi"].tap()
-        app.buttons["Password dimenticata?"].tap()
+        // Recupera: compare il codice di recupero (prima si torna su Accedi e si aspetta che ci sia davvero)
+        tocca("Accedi", finchéCompare: "Password dimenticata?")
+        tocca("Password dimenticata?", finchéCompare: "Cambia la password")
         XCTAssertTrue(app.textFields["Codice di recupero"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Cambia la password"].exists)
 
         // di nuovo Accedi, con nome e password: si entra
-        app.buttons["Accedi"].tap()
+        tocca("Accedi", finchéCompare: "Entra")
         nome.tap()
         nome.typeText("mister.rossi")
         let password = app.secureTextFields["Password"]
@@ -125,10 +137,7 @@ final class AccessoUITests: XCTestCase {
         ]
         for giro in 1...6 {
             for passo in arrivi {
-                let pulsante = app.buttons[passo.tocco]
-                XCTAssertTrue(pulsante.waitForExistence(timeout: 10), "giro \(giro): manca il pulsante «\(passo.tocco)»")
-                pulsante.tap()
-                XCTAssertTrue(app.buttons[passo.atteso].waitForExistence(timeout: 10), "giro \(giro): dopo «\(passo.tocco)» non compare «\(passo.atteso)»")
+                XCTContext.runActivity(named: "giro \(giro): \(passo.tocco)") { _ in tocca(passo.tocco, finchéCompare: passo.atteso) }
             }
         }
         // Con i tocchi a raffica sul Mac di GitHub un tocco può perdersi: si rimette «Accedi» finché il pulsante «Entra» compare.
