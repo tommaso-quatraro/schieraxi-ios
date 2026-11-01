@@ -41,7 +41,7 @@ final class ScambiNVmTests: XCTestCase {
         v.altra = "X"
         v.doIds = [1]
         v.ricevoIds = [2]
-        for cattivo in ["abc", "1,5", "12 crediti", "99999999999999999999", "1000000"] {
+        for cattivo in ["abc", "1,5", "12 crediti", "99999999999999999999", "1000000", "-1000000", "-9223372036854775808"] {
             v.conguaglio = cattivo
             XCTAssertFalse(v.conguaglioValido, cattivo)
             XCTAssertFalse(v.puoAnalizzare, cattivo)
