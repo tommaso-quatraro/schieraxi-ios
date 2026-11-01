@@ -286,14 +286,16 @@ enum Condiviso {
         /// Il dettaglio per le Impostazioni (Avanzate).
         var lungo: String {
             func s(_ b: Bool) -> String { b ? "sì" : "no" }
-            var righe = [
-                "Gruppo di SideStore (ALTAppGroups): " + (scrittiDaSideStore.isEmpty ? "nessuno" : scrittiDaSideStore.joined(separator: ", ")),
-                "Gruppi del profilo: " + (gruppiDelProfilo.isEmpty ? "nessuno" : gruppiDelProfilo.joined(separator: ", ")),
-                "Gruppi provati: " + provati.joined(separator: ", "),
-                "Keychain condiviso: " + s(portachiavi),
-                "Cartella condivisa: " + (gruppoFunzionante.map { "sì (\($0))" } ?? "NO (iOS non dà il gruppo a questo programma)"),
-                "File presente: \(s(filePresente))",
-            ]
+            func elenco(_ gruppi: [String]) -> String { gruppi.isEmpty ? "nessuno" : gruppi.joined(separator: ", ") }
+            // una riga alla volta: un unico elenco con tutti questi pezzi era troppo per il controllo dei tipi del compilatore
+            var righe: [String] = []
+            righe.append("Gruppo di SideStore (ALTAppGroups): " + elenco(scrittiDaSideStore))
+            righe.append("Gruppi del profilo: " + elenco(gruppiDelProfilo))
+            righe.append("Gruppi provati: " + provati.joined(separator: ", "))
+            righe.append("Keychain condiviso: " + s(portachiavi))
+            let cartella: String = gruppoFunzionante.map { "sì (\($0))" } ?? "NO (iOS non dà il gruppo a questo programma)"
+            righe.append("Cartella condivisa: " + cartella)
+            righe.append("File presente: " + s(filePresente))
             if let ultimaScrittura { righe.append("Ultima scrittura dell'app: " + ultimaScrittura.formatted(date: .abbreviated, time: .standard)) }
             righe.append("Indirizzo: \(s(haIndirizzo)) · token: \(s(haToken)) · riassunto: \(s(haRiassunto))")
             return righe.joined(separator: "\n")
