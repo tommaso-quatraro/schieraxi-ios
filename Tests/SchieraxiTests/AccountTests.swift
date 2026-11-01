@@ -517,11 +517,19 @@ final class DatiLocaliTests: XCTestCase {
 @MainActor
 final class UscitaCancellaLeCopieDiIosTests: XCTestCase {
     func testLaCacheDiUrlSessionSiSvuotaConLUscita() async throws {
+        // Prima il test usava la cache vera dell'app (`URLCache.shared`, su disco e condivisa con l'app che ospita i test):
+        // la scrittura su disco è asincrona e poteva arrivare DOPO lo svuotamento, rimettendo la risposta (test instabile).
+        // Ora per la durata del test `URLCache.shared` è una cache nuova solo in memoria: niente scritture in ritardo né
+        // risposte d'altri; si controlla comunque che `DatiLocali.svuota()` svuoti proprio `URLCache.shared`.
+        let vera = URLCache.shared
+        URLCache.shared = URLCache(memoryCapacity: 1_000_000, diskCapacity: 0, diskPath: nil)
+        defer { URLCache.shared = vera }
         let richiesta = URLRequest(url: URL(string: "https://prova-urlcache.invalid/api/oggi")!)
         let risposta = HTTPURLResponse(url: richiesta.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         URLCache.shared.storeCachedResponse(CachedURLResponse(response: risposta, data: Data("x".utf8)), for: richiesta)
-        // la scrittura nella cache di iOS è asincrona: si aspetta che ci sia, poi si esce, poi si aspetta che non ci sia più
+        // si aspetta che la copia ci sia davvero: se non c'è il test non prova niente e deve dirlo (prima proseguiva in silenzio)
         for _ in 0..<100 where URLCache.shared.cachedResponse(for: richiesta) == nil { try await Task.sleep(nanoseconds: 20_000_000) }
+        XCTAssertNotNil(URLCache.shared.cachedResponse(for: richiesta), "la copia di prova deve esserci prima dell'uscita")
         DatiLocali.svuota()
         for _ in 0..<100 where URLCache.shared.cachedResponse(for: richiesta) != nil { try await Task.sleep(nanoseconds: 20_000_000) }
         XCTAssertNil(URLCache.shared.cachedResponse(for: richiesta))
