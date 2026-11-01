@@ -27,7 +27,7 @@ final class ModelliTests: XCTestCase {
         let tua = try leggi(#"{"modulo":"4-4-2","punteggio_atteso":71.7,"tua_scelta":true}"#).formazione
         XCTAssertEqual(tua?.modulo, "4-4-2")
         XCTAssertEqual(tua?.tuaScelta, true)
-        XCTAssertEqual(tua?.titoloScheda, "La tua formazione · la tua scelta")
+        XCTAssertEqual(tua?.titoloScheda, "La tua scelta")
         let consigliata = try leggi(#"{"modulo":"5-3-2","punteggio_atteso":70.1,"tua_scelta":false}"#).formazione
         XCTAssertEqual(consigliata?.tuaScelta, false)
         XCTAssertEqual(consigliata?.titoloScheda, "La formazione consigliata")

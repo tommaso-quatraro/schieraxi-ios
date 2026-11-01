@@ -46,7 +46,7 @@ final class FumoUITests: XCTestCase {
     }
 
     func testOggiMostraLaGiornataELaFormazione() {
-        attendi("La tua formazione · la tua scelta")
+        attendi("La tua scelta")
         attendi("Da controllare")
         attendi("Apri la formazione")
         attendi("punti attesi", contiene: true)

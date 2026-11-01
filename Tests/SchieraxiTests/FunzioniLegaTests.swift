@@ -39,4 +39,30 @@ final class FunzioniLegaTests: XCTestCase {
         let spente = StatoFunzioni(scelte: ["diario": false, "scambi_trova": false, "backup": false])
         XCTAssertEqual(o.cose(funzioni: spente, tecniche: true).map(\.id), ["4"])
     }
+
+    func testPiuGiornateFinitePerLaDiarioDiventanoUnaRiga() throws {
+        let o = try oggi(#"""
+        [{"id": "diario:6", "tipo": "diario", "testo": "La giornata 6 è finita: dimmi se hai schierato la consigliata.", "priorita": 3, "azione": "Ho schierato la consigliata", "destinazione": {"link": "schieraxi://lega"}},
+         {"id": "diario:5", "tipo": "diario", "testo": "La giornata 5 è finita: dimmi se hai schierato la consigliata.", "priorita": 3},
+         {"id": "9", "tipo": "dubbio", "testo": "Dubbio"}]
+        """#)
+        let cose = o.cose(funzioni: .tutteAccese, tecniche: false)
+        XCTAssertEqual(cose.count, 2)
+        let riga = cose.first { $0.tipo == "diario" }
+        XCTAssertEqual(riga?.testo, "Le giornate 5 e 6 sono finite: dimmi se hai schierato la consigliata.")
+        XCTAssertEqual(riga?.azione, "Vedi")
+        XCTAssertNotNil(riga?.destinazione)
+    }
+
+    func testUnaSolaGiornataFinitaResta() throws {
+        let o = try oggi(#"[{"id": "diario:5", "tipo": "diario", "testo": "La giornata 5 è finita: dimmi se hai schierato la consigliata."}]"#)
+        XCTAssertEqual(o.cose(funzioni: .tutteAccese, tecniche: false).first?.id, "diario:5")
+    }
+
+    func testCreditiSoloSeIlServerLiAccendeMovimentiSeNonSpenti() {
+        XCTAssertFalse(StatoFunzioni.tutteAccese.accesoSoloSeNominato(Funzione.crediti))
+        XCTAssertTrue(StatoFunzioni(scelte: ["crediti": true]).accesoSoloSeNominato(Funzione.crediti))
+        XCTAssertTrue(StatoFunzioni.tutteAccese.acceso(Funzione.movimenti), "server senza la chiave: acceso")
+        XCTAssertFalse(StatoFunzioni(scelte: ["movimenti": false]).acceso(Funzione.movimenti))
+    }
 }
