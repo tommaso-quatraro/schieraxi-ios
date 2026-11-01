@@ -108,6 +108,12 @@ final class GiornataLegaTests: XCTestCase {
         XCTAssertEqual(r.etichettaGiornata, "Giornata 9")
     }
 
+    func testLaDidascaliaNonRipeteLaTuaScelta() {
+        XCTAssertEqual(TempiLega.didascalia(giornata: "Giornata 3", scelta: true, comeConsigliato: false), "Giornata 3")
+        XCTAssertEqual(TempiLega.didascalia(giornata: "Giornata 3", scelta: false, comeConsigliato: true), "Giornata 3 · modulo consigliato")
+        XCTAssertEqual(TempiLega.didascalia(giornata: "Giornata 3", scelta: false, comeConsigliato: false), "Giornata 3 · modulo scelto")
+    }
+
     func testFormazioneSenzaGiornataDiLega() throws {
         let f: Formazione = try Fixture.decodifica("formazione")
         XCTAssertEqual(f.etichettaGiornata, "Giornata \(f.giornata)")
