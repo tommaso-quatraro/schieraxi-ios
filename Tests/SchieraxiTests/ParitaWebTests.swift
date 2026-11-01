@@ -189,6 +189,48 @@ final class VersioniEConflittiTests: XCTestCase {
         XCTAssertEqual(ProtocolloFinto.ultimaRichiesta?.value(forHTTPHeaderField: "If-Match"), "\"v2\"")
     }
 
+    func testLaSceltaHaUnETagPerGiornata() {
+        XCTAssertEqual(VersioniRisorse.risorsa(per: "/api/scelta?giornata=9"), "scelta:9")
+        XCTAssertNil(VersioniRisorse.risorsa(per: "/api/scelta"), "senza giornata non si sa quale scelta")
+        let salva = Data(#"{"titolari": [1, 2], "salva": true, "giornata": 9}"#.utf8)
+        XCTAssertEqual(VersioniRisorse.risorsa(per: "/api/formazione/valuta", corpo: salva), "scelta:9")
+        let prova = Data(#"{"titolari": [1, 2], "salva": false, "giornata": 9}"#.utf8)
+        XCTAssertNil(VersioniRisorse.risorsa(per: "/api/formazione/valuta", corpo: prova), "una valutazione e basta non scrive niente")
+        let altra = Data(#"{"titolari": [1], "salva": true, "giornata": 9, "squadra": "Gli Amici"}"#.utf8)
+        XCTAssertNil(VersioniRisorse.risorsa(per: "/api/formazione/valuta", corpo: altra), "per un'altra squadra il server non salva")
+        XCTAssertNil(VersioniRisorse.risorsa(per: "/api/formazione/valuta", corpo: Data("non json".utf8)))
+        XCTAssertNil(VersioniRisorse.risorsa(per: "/api/formazione"))
+    }
+
+    func testSalvareLaSceltaMandaLETagLettoE412EUnConflitto() async throws {
+        ProtocolloFinto.gestore = { [unowned self] r in
+            if r.httpMethod == "GET" { return (risposta(r, 200, ["ETag": "\"s1\""]), Data("null".utf8)) }
+            return (risposta(r, 412, ["ETag": "\"s2\""]), Data(#"{"detail": "Questi dati sono stati cambiati da un altro dispositivo."}"#.utf8))
+        }
+        _ = try await server.grezzo("/api/scelta?giornata=9")
+        // una valutazione senza salvare non manda If-Match
+        ProtocolloFinto.gestore = { [unowned self] r in (risposta(r, 200), Data("{}".utf8)) }
+        _ = try await server.corpoJSON("POST", "/api/formazione/valuta", RichiestaValutazione(titolari: [1], salva: false, giornata: 9))
+        XCTAssertNil(ProtocolloFinto.ultimaRichiesta?.value(forHTTPHeaderField: "If-Match"))
+        // salvando sì, con l'ETag della giornata giusta
+        ProtocolloFinto.gestore = { [unowned self] r in
+            (risposta(r, 412, ["ETag": "\"s2\""]), Data(#"{"detail": "Questi dati sono stati cambiati da un altro dispositivo."}"#.utf8))
+        }
+        do {
+            _ = try await server.corpoJSON("POST", "/api/formazione/valuta", RichiestaValutazione(titolari: [1], salva: true, giornata: 9))
+            XCTFail("doveva lanciare")
+        } catch let e as ErroreApi {
+            XCTAssertTrue(e.eConflitto)
+        }
+        XCTAssertEqual(ProtocolloFinto.ultimaRichiesta?.value(forHTTPHeaderField: "If-Match"), "\"s1\"")
+        // la cancellazione della stessa giornata usa l'ETag nuovo dato dal 412; un'altra giornata nessuno
+        ProtocolloFinto.gestore = { [unowned self] r in (risposta(r, 200), Data("{}".utf8)) }
+        _ = try await server.richiesta("DELETE", "/api/scelta?giornata=9", corpo: nil)
+        XCTAssertEqual(ProtocolloFinto.ultimaRichiesta?.value(forHTTPHeaderField: "If-Match"), "\"s2\"")
+        _ = try await server.richiesta("DELETE", "/api/scelta?giornata=10", corpo: nil)
+        XCTAssertNil(ProtocolloFinto.ultimaRichiesta?.value(forHTTPHeaderField: "If-Match"))
+    }
+
     func testUnETagStranoNonSiRicorda() {
         VersioniRisorse.condivise.imposta("a\nb", server: indirizzo, risorsa: "regole")
         VersioniRisorse.condivise.imposta(String(repeating: "x", count: 500), server: indirizzo, risorsa: "regole")
