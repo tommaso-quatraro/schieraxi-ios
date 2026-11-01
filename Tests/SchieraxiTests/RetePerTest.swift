@@ -252,6 +252,42 @@ final class ImmaginiTests: XCTestCase {
         XCTAssertFalse(s.corpiInviati(a: "UPLOAD").isEmpty)
     }
 
+    func testDopoUnRiavvioNonTornaLoStemmaVecchio() async throws {
+        let indirizzo = "https://prova-stemma-\(UUID().uuidString).invalid"
+        let elenco = Data("[{\"nome\": \"Gli Amici\", \"mia\": true, \"immagini\": {\"stemma\": true, \"maglia\": false}}]".utf8)
+        func serverCon(_ immagine: Data) -> ServerDiProva {
+            ServerDiProva(indirizzo: indirizzo) { metodo, percorso, _ in
+                if percorso.hasPrefix("/api/foto-disponibili") { return Data("{\"ids\": []}".utf8) }
+                if percorso.hasPrefix("/api/squadre/immagine") { return metodo == "GET" ? immagine : Data("{}".utf8) }
+                if percorso.hasPrefix("/api/squadre") { return elenco }
+                throw ErroreApi.server("niente")
+            }
+        }
+        let vecchio = png(20), nuovo = png(40)
+        let primo = Immagini(server: serverCon(vecchio))
+        await primo.caricaElenchi()
+        await primo.caricaSquadra("Gli Amici", tipo: "stemma")
+        XCTAssertNotNil(primo.memoriaSquadra("Gli Amici", tipo: "stemma"))
+        // la copia su disco si scrive in secondo piano: si aspetta che ci sia
+        var presente = false
+        for _ in 0..<100 where !presente {
+            presente = await Cache.leggi(Immagini.percorsoSquadra("Gli Amici", tipo: "stemma"), indirizzo: indirizzo, cartella: "img") != nil
+            if !presente { try await Task.sleep(nanoseconds: 20_000_000) }
+        }
+        XCTAssertTrue(presente, "lo stemma scaricato resta su disco")
+        // l'utente carica uno stemma nuovo
+        try await primo.invia(nuovo, squadra: "Gli Amici", tipo: "stemma")
+        // alla prossima apertura (la numerazione delle edizioni riparte da zero) si deve vedere quello nuovo, non la copia vecchia
+        let secondo = Immagini(server: serverCon(nuovo))
+        await secondo.caricaElenchi()
+        await secondo.caricaSquadra("Gli Amici", tipo: "stemma")
+        let visto = try XCTUnwrap(secondo.memoriaSquadra("Gli Amici", tipo: "stemma"))
+        let larghezzaNuovo = try XCTUnwrap(UIImage(data: nuovo)).size.width
+        let larghezzaVecchio = try XCTUnwrap(UIImage(data: vecchio)).size.width
+        XCTAssertNotEqual(larghezzaNuovo, larghezzaVecchio)
+        XCTAssertEqual(visto.size.width, larghezzaNuovo, "lo stemma vecchio rimasto su disco non deve tornare")
+    }
+
     func testImmagineRidottaPerIlServer() throws {
         let opaco = UIGraphicsImageRendererFormat.default()
         opaco.opaque = true   // come una foto della libreria: nessun canale della trasparenza
