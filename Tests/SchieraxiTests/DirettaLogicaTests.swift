@@ -14,7 +14,7 @@ final class DirettaLogicaTests: XCTestCase {
         {"aggiornato_il": "2026-10-31 15:20:04", "fonte": "espn", "in_corso": 1, "campo_nuovo": [1, 2],
          "partite": [{"casa": "inter", "trasferta": "roma", "data": "2026-10-31 15:00", "stato": "tempi_supplementari",
                       "minuto": "34'", "gol_casa": 1, "gol_trasferta": 0,
-                      "eventi": [{"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thuram"}, {"tipo": "cosa_nuova"}]},
+                      "eventi": [{"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thorvan"}, {"tipo": "cosa_nuova"}]},
                      {"casa": "milan", "trasferta": "napoli"}]}
         """)
         XCTAssertEqual(l.partite?.count, 2)
@@ -32,19 +32,19 @@ final class DirettaLogicaTests: XCTestCase {
 
     func testGliEventiMostranoSoloGolRigoriAutogolERossi() throws {
         let e = try eventi("""
-        [{"tipo": "gol", "minuto": "33'", "squadra": "casa", "chi": "Pobega", "assist": "Giocatore 046"},
+        [{"tipo": "gol", "minuto": "33'", "squadra": "casa", "chi": "Poberga", "assist": "Lemao"},
          {"tipo": "giallo", "minuto": "40'", "squadra": "casa", "chi": "Tizio"},
-         {"tipo": "rigore", "minuto": "6'", "squadra": "trasferta", "chi": "Varela"},
+         {"tipo": "rigore", "minuto": "6'", "squadra": "trasferta", "chi": "Varsone"},
          {"tipo": "autogol", "minuto": "50'", "squadra": "casa", "chi": "Caio"},
          {"tipo": "rigore_sbagliato", "minuto": "55'", "squadra": "trasferta", "chi": "Sempronio"},
          {"tipo": "rigore_parato", "minuto": "56'", "squadra": "casa", "chi": "Mevio"},
-         {"tipo": "rosso", "minuto": "71'", "squadra": "trasferta", "chi": "De Roon"},
-         {"tipo": "doppio_giallo", "minuto": "90'+2'", "squadra": "casa", "chi": "Lobotka"},
+         {"tipo": "rosso", "minuto": "71'", "squadra": "trasferta", "chi": "De Valk"},
+         {"tipo": "doppio_giallo", "minuto": "90'+2'", "squadra": "casa", "chi": "Lobrenka"},
          {"tipo": "cosa_nuova", "minuto": "1'", "squadra": "casa", "chi": "Nessuno"}]
         """)
         XCTAssertEqual(EventiPartita.visibili(e).map(\.testoCompatto), [
-            "33' Pobega (ass. Giocatore 046)", "6' Varela (rig.)", "50' Caio (aut.)", "55' Sempronio (rig. sbagl.)",
-            "56' Mevio (rig. parato)", "71' De Roon", "90'+2' Lobotka (2° giallo)"])
+            "33' Poberga (ass. Lemao)", "6' Varsone (rig.)", "50' Caio (aut.)", "55' Sempronio (rig. sbagl.)",
+            "56' Mevio (rig. parato)", "71' De Valk", "90'+2' Lobrenka (2° giallo)"])
         let c = EventiPartita.colonne(e)
         XCTAssertEqual(c.casa.count, 4)
         XCTAssertEqual(c.trasferta.count, 3)
@@ -52,18 +52,18 @@ final class DirettaLogicaTests: XCTestCase {
     }
 
     func testGliEventiStortiNonRompono() throws {
-        let e = try eventi(#"[{"tipo": "gol", "minuto": 12, "squadra": "casa", "chi": "Thuram", "assist": {"nome": "X"}}, {"tipo": "gol"}]"#)
+        let e = try eventi(#"[{"tipo": "gol", "minuto": 12, "squadra": "casa", "chi": "Thorvan", "assist": {"nome": "X"}}, {"tipo": "gol"}]"#)
         XCTAssertEqual(e.count, 2)
-        XCTAssertEqual(e[0].testoCompatto, "12' Thuram")
+        XCTAssertEqual(e[0].testoCompatto, "12' Thorvan")
         XCTAssertNil(e[0].assist)
         XCTAssertEqual(e[1].testoCompatto, "Gol")
         XCTAssertTrue(EventiPartita.visibili(nil).isEmpty)
     }
 
     func testIGialliNonStannoNellaFrasePerVoiceOver() throws {
-        let l = try live(#"{"partite": [{"casa": "inter", "trasferta": "roma", "stato": "finita", "gol_casa": 1, "gol_trasferta": 0, "eventi": [{"tipo": "giallo", "minuto": "3'", "squadra": "casa", "chi": "Tizio"}, {"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thuram", "assist": "Barella"}]}]}"#)
+        let l = try live(#"{"partite": [{"casa": "inter", "trasferta": "roma", "stato": "finita", "gol_casa": 1, "gol_trasferta": 0, "eventi": [{"tipo": "giallo", "minuto": "3'", "squadra": "casa", "chi": "Tizio"}, {"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thorvan", "assist": "Barlesi"}]}]}"#)
         let frase = DirettaLogica.frase(casa: "inter", trasferta: "roma", live: l.partite?.first, ora: nil, titolari: [])
-        XCTAssertEqual(frase, "Inter 1, Roma 0, finita. Gol di Thuram al minuto 10, assist di Barella")
+        XCTAssertEqual(frase, "Inter 1, Roma 0, finita. Gol di Thorvan al minuto 10, assist di Barlesi")
     }
 
     func testRispostaVuotaNonRompeNiente() throws {
@@ -122,9 +122,9 @@ final class DirettaLogicaTests: XCTestCase {
         let prima = try live(#"{"partite": [{"casa": "inter", "trasferta": "roma", "stato": "primo_tempo", "gol_casa": 0, "gol_trasferta": 0}]}"#).partite?.first
         let dopo = try live("""
         {"partite": [{"casa": "inter", "trasferta": "roma", "stato": "primo_tempo", "minuto": "10'", "gol_casa": 1, "gol_trasferta": 0,
-                      "eventi": [{"tipo": "giallo", "minuto": "5'", "squadra": "casa", "chi": "Giocatore 004"}, {"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thuram"}]}]}
+                      "eventi": [{"tipo": "giallo", "minuto": "5'", "squadra": "casa", "chi": "Bastrani"}, {"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thorvan"}]}]}
         """).partite?.first
-        XCTAssertEqual(DirettaLogica.annuncioGol(casa: "inter", trasferta: "roma", prima: prima, dopo: dopo), "Gol! Inter 1, Roma 0. Gol di Thuram al minuto 10")
+        XCTAssertEqual(DirettaLogica.annuncioGol(casa: "inter", trasferta: "roma", prima: prima, dopo: dopo), "Gol! Inter 1, Roma 0. Gol di Thorvan al minuto 10")
         XCTAssertNil(DirettaLogica.annuncioGol(casa: "inter", trasferta: "roma", prima: dopo, dopo: dopo), "nessun gol nuovo, nessun annuncio")
         XCTAssertNil(DirettaLogica.annuncioGol(casa: "inter", trasferta: "roma", prima: nil, dopo: dopo), "il primo dato non si annuncia")
     }
@@ -147,13 +147,13 @@ final class DirettaLogicaTests: XCTestCase {
 
     func testITitolariSiLeggonoAncheConElementiSbagliati() throws {
         let json = #"""
-        {"giornata": 9, "miei_titolari": {"inter": [{"id": 1, "nome": "Giocatore 089", "ruolo": "P"}, {"nome": "senza id"}, 7],
-                                          "hellas_verona": [{"id": 2, "nome": "Giocatore 064", "ruolo": "P"}], "roma": "boh"}}
+        {"giornata": 9, "miei_titolari": {"inter": [{"id": 1, "nome": "Sorvani", "ruolo": "P"}, {"nome": "senza id"}, 7],
+                                          "hellas_verona": [{"id": 2, "nome": "Montifò", "ruolo": "P"}], "roma": "boh"}}
         """#
         let o: Oggi = try Decodifica.decodifica(Data(json.utf8))
         let m = o.mieiTitolari
-        XCTAssertEqual(m?.titolari(di: "inter").map(\.nome), ["Giocatore 089"])
-        XCTAssertEqual(m?.titolari(di: "hellas_verona").map(\.nome), ["Giocatore 064"], "anche se il decodificatore cambia la chiave")
+        XCTAssertEqual(m?.titolari(di: "inter").map(\.nome), ["Sorvani"])
+        XCTAssertEqual(m?.titolari(di: "hellas_verona").map(\.nome), ["Montifò"], "anche se il decodificatore cambia la chiave")
         XCTAssertEqual(m?.titolari(di: "roma").count, 0)
         XCTAssertEqual(m?.titolari(casa: "inter", trasferta: "hellas-verona").count, 2)
     }
@@ -170,13 +170,13 @@ final class DirettaLogicaTests: XCTestCase {
     func testLaFrasePerVoiceOverEPiena() throws {
         let l = try live("""
         {"partite": [{"casa": "inter", "trasferta": "roma", "stato": "secondo_tempo", "minuto": "90'+3'", "gol_casa": 2, "gol_trasferta": 1,
-                      "eventi": [{"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thuram"}, {"tipo": "rosso", "minuto": "80'", "squadra": "trasferta", "chi": "Cristante"}]}]}
+                      "eventi": [{"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "Thorvan"}, {"tipo": "rosso", "minuto": "80'", "squadra": "trasferta", "chi": "Cristoni"}]}]}
         """)
-        let uno = [MioTitolare(id: 1, nome: "Giocatore 089", ruolo: "P")]
+        let uno = [MioTitolare(id: 1, nome: "Sorvani", ruolo: "P")]
         let frase = DirettaLogica.frase(casa: "inter", trasferta: "roma", live: l.partite?.first, ora: "15:00", titolari: uno)
-        XCTAssertEqual(frase, "Inter 2, Roma 1, al minuto 90 più 3. Gol di Thuram al minuto 10. Espulso Cristante al minuto 80. Giocano il tuo titolare Giocatore 089")
-        let due = uno + [MioTitolare(id: 2, nome: "Giocatore 004", ruolo: "D")]
-        XCTAssertTrue(DirettaLogica.frase(casa: "inter", trasferta: "roma", live: nil, ora: "15:00", titolari: due).hasSuffix("Giocano i tuoi titolari Giocatore 089, Giocatore 004"))
+        XCTAssertEqual(frase, "Inter 2, Roma 1, al minuto 90 più 3. Gol di Thorvan al minuto 10. Espulso Cristoni al minuto 80. Giocano il tuo titolare Sorvani")
+        let due = uno + [MioTitolare(id: 2, nome: "Bastrani", ruolo: "D")]
+        XCTAssertTrue(DirettaLogica.frase(casa: "inter", trasferta: "roma", live: nil, ora: "15:00", titolari: due).hasSuffix("Giocano i tuoi titolari Sorvani, Bastrani"))
         XCTAssertEqual(DirettaLogica.frase(casa: "inter", trasferta: "roma", live: nil, ora: "15:00", titolari: []), "Inter contro Roma, alle 15:00")
     }
 

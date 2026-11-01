@@ -7,13 +7,13 @@ final class WidgetRiassuntoTests: XCTestCase {
     {"giornata": 11, "prima_partita": "2026-10-31 18:30", "scadenza": "2026-10-31 18:30", "ore_mancanti": 5.5, "iniziata": false, "con_probabili": true,
      "squadra": "Schiera FC", "crediti_residui": 12,
      "formazione": {"modulo": "3-4-3", "punti_attesi": 73.7,
-       "titolari": [{"id": 1, "nome": "Giocatore 096", "ruolo": "P", "punti_attesi": 6.1, "p_voto": 0.98, "avatar": {"c": 2, "b": 1}},
-                    {"id": 2, "nome": "Giocatore 002", "ruolo": "D", "punti_attesi": 6.4, "p_voto": 0.96}],
+       "titolari": [{"id": 1, "nome": "Ivo Sorvani", "ruolo": "P", "punti_attesi": 6.1, "p_voto": 0.98, "avatar": {"c": 2, "b": 1}},
+                    {"id": 2, "nome": "Alvise Bastrani", "ruolo": "D", "punti_attesi": 6.4, "p_voto": 0.96}],
        "panchina": [10, 11, 12]},
-     "avvisi": [{"id": 5, "nome": "Giocatore 044", "ruolo": "A", "tipo": "dubbio", "in_formazione": true, "p_voto": 0.55},
+     "avvisi": [{"id": 5, "nome": "Leonel Marteni", "ruolo": "A", "tipo": "dubbio", "in_formazione": true, "p_voto": 0.55},
                 {"id": 7, "nome": "Riserva", "ruolo": "C", "tipo": "infortunato", "in_formazione": false}],
-     "rosa": [{"id": 1, "nome": "Giocatore 096", "ruolo": "P", "avversario": "roma", "in_casa": true, "data_partita": "2026-10-31 20:45", "stato": "disponibile", "percentuale": 98, "dubbio": false, "diffidato": false, "titolare": true, "rigorista": false, "punti_attesi": 6.1},
-              {"id": 5, "nome": "Giocatore 044", "ruolo": "A", "avversario": "milan", "in_casa": false, "data_partita": "2026-10-31 18:30", "stato": "dubbio", "percentuale": 55, "dubbio": true, "diffidato": false, "titolare": true, "rigorista": true},
+     "rosa": [{"id": 1, "nome": "Ivo Sorvani", "ruolo": "P", "avversario": "roma", "in_casa": true, "data_partita": "2026-10-31 20:45", "stato": "disponibile", "percentuale": 98, "dubbio": false, "diffidato": false, "titolare": true, "rigorista": false, "punti_attesi": 6.1},
+              {"id": 5, "nome": "Leonel Marteni", "ruolo": "A", "avversario": "milan", "in_casa": false, "data_partita": "2026-10-31 18:30", "stato": "dubbio", "percentuale": 55, "dubbio": true, "diffidato": false, "titolare": true, "rigorista": true},
               {"id": 7, "nome": "Riserva", "ruolo": "C", "avversario": "lazio", "in_casa": true, "data_partita": "2026-10-31 15:00", "stato": "infortunato", "titolare": false},
               {"id": 8, "nome": "Senza Partita", "ruolo": "D", "stato": "disponibile"}],
      "squalificati": [9], "diffidati": [2], "rigoristi": [5],
@@ -77,7 +77,7 @@ final class WidgetRiassuntoTests: XCTestCase {
         let w = try riassunto()
         let adesso = try XCTUnwrap(Quando.data("2026-10-31 12:00"))
         let giocano = w.giocanoPresto(dopo: adesso)
-        XCTAssertEqual(giocano.map(\.id), [5, 1], "prima Giocatore 044 (18:30), poi Giocatore 089 (20:45); l'infortunato e chi non ha partita no")
+        XCTAssertEqual(giocano.map(\.id), [5, 1], "prima Leonel (18:30), poi Sorvani (20:45); l'infortunato e chi non ha partita no")
         XCTAssertEqual(giocano.first?.oraBreve, "18:30")
         XCTAssertEqual(giocano.first?.partitaBreve, "@ MIL · 18:30")
         XCTAssertEqual(giocano.last?.partitaBreve, "vs ROM · 20:45")
@@ -139,13 +139,13 @@ final class WidgetRiassuntoTests: XCTestCase {
 
     func testLePartiteLiveEIMieiTitolari() throws {
         let corpo = #"""
-        {"giornata": 11, "formazione": {"modulo": "3-4-3", "titolari": [{"id": 5, "nome": "Giocatore 044", "ruolo": "A"}]},
-         "rosa": [{"id": 5, "nome": "Giocatore 044", "ruolo": "A", "avversario": "roma", "in_casa": true, "titolare": true},
+        {"giornata": 11, "formazione": {"modulo": "3-4-3", "titolari": [{"id": 5, "nome": "Leonel Marteni", "ruolo": "A"}]},
+         "rosa": [{"id": 5, "nome": "Leonel Marteni", "ruolo": "A", "avversario": "roma", "in_casa": true, "titolare": true},
                   {"id": 6, "nome": "Altro", "ruolo": "D", "avversario": "milan", "in_casa": false, "titolare": false}],
          "live": {"aggiornato_il": "2026-10-31 15:20:04", "fonte": "espn", "in_corso": 1, "partite": [
            {"casa": "lazio", "trasferta": "juve", "data": "2026-10-31 20:45", "stato": "da_giocare", "gol_casa": null, "gol_trasferta": null, "eventi": []},
            {"casa": "inter", "trasferta": "roma", "data": "2026-10-31 15:00", "stato": "secondo_tempo", "minuto": "63'", "gol_casa": 2, "gol_trasferta": 0,
-            "eventi": [{"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "M. Thuram"}]},
+            "eventi": [{"tipo": "gol", "minuto": "10'", "squadra": "casa", "chi": "M. Thorvan"}]},
            {"casa": "napoli", "trasferta": "genoa", "data": "2026-10-31 12:30", "stato": "finita", "gol_casa": 1, "gol_trasferta": 1},
            {"casa": "x", "trasferta": "y", "data": "2026-10-31 15:30", "stato": "stato_nuovo", "gol_casa": 0, "gol_trasferta": 0}]}}
         """#
@@ -159,7 +159,7 @@ final class WidgetRiassuntoTests: XCTestCase {
         XCTAssertEqual(inter.etichetta, "63'")
         XCTAssertEqual(w.partiteLive.first { $0.casa == "lazio" }?.etichetta, "20:45")
         XCTAssertEqual(w.partiteLive.first { $0.casa == "napoli" }?.etichetta, "Finita")
-        XCTAssertEqual(w.mieiTitolari(in: inter).map(\.id), [5], "Giocatore 044 gioca in casa contro la Roma")
+        XCTAssertEqual(w.mieiTitolari(in: inter).map(\.id), [5], "Leonel gioca in casa contro la Roma")
         XCTAssertTrue(w.mieiTitolari(in: try XCTUnwrap(w.partiteLive.first { $0.casa == "lazio" })).isEmpty)
         let prima = try XCTUnwrap(Quando.data("2026-10-31 14:00"))
         XCTAssertTrue(w.finestraLive(adesso: prima), "c'e' una partita in gioco")
@@ -217,8 +217,8 @@ final class WidgetRiassuntoTests: XCTestCase {
     }
 
     func testIlCognome() {
-        XCTAssertEqual(GiocatoreWidget(id: 1, nome: "Giocatore 002").cognome, "Giocatore 004")
-        XCTAssertEqual(GiocatoreWidget(id: 1, nome: "Pedro").cognome, "Pedro")
+        XCTAssertEqual(GiocatoreWidget(id: 1, nome: "Alvise Bastrani").cognome, "Bastrani")
+        XCTAssertEqual(GiocatoreWidget(id: 1, nome: "Pelayo").cognome, "Pelayo")
     }
 }
 

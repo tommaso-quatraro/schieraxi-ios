@@ -1,7 +1,7 @@
 import XCTest
 @testable import Schieraxi
 
-/// Decodifica delle risposte vere del server (copiate in `Tests/Fixtures` da una lega reale con il server locale).
+/// Decodifica delle risposte del server con dati inventati (in `Tests/Fixtures`).
 final class ModelliTests: XCTestCase {
     func testOggi() throws {
         let o: Oggi = try Fixture.decodifica("oggi")

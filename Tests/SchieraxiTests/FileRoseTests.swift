@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 /// Importazione delle rose da Excel, CSV e testo: quali file si ammettono, come si preparano per il server, cosa succede davvero all'invio.
 final class FileRoseTests: XCTestCase {
     private let zip = Data([0x50, 0x4B, 0x03, 0x04, 0x14, 0x00])
-    private let csv = Data("Squadra;Ruolo;Giocatore\nA;P;Giocatore 089\n".utf8)
+    private let csv = Data("Squadra;Ruolo;Giocatore\nA;P;Sorvani\n".utf8)
 
     // MARK: tipi del selettore
 
@@ -50,7 +50,7 @@ final class FileRoseTests: XCTestCase {
         XCTAssertEqual(prepara("rose.csv", csv), FileRose.Preparato(nome: "rose.csv", tipo: "text/csv"))
         XCTAssertEqual(prepara("ROSE.CSV", csv), FileRose.Preparato(nome: "ROSE.csv", tipo: "text/csv"), "l'estensione in maiuscolo va bene")
         XCTAssertEqual(prepara("rose.txt", csv), FileRose.Preparato(nome: "rose.txt", tipo: "text/plain"))
-        XCTAssertEqual(prepara("rose.tsv", Data("A\tP\tSommer".utf8)), FileRose.Preparato(nome: "rose.csv", tipo: "text/csv"),
+        XCTAssertEqual(prepara("rose.tsv", Data("A\tP\tSorvani".utf8)), FileRose.Preparato(nome: "rose.csv", tipo: "text/csv"),
                        "il server legge CSV e testo: un .tsv va come .csv (il separatore lo riconosce da solo)")
         XCTAssertEqual(prepara("rose.text", csv), FileRose.Preparato(nome: "rose.txt", tipo: "text/plain"))
     }
@@ -85,7 +85,7 @@ final class FileRoseTests: XCTestCase {
         XCTAssertEqual(errore("rose.csv", Data()), .vuoto)
         XCTAssertEqual(errore("rose.csv", Data(count: FileRose.massimoByte + 1)), .troppoGrande)
         XCTAssertEqual(errore("rose.csv", Data([0x41, 0x00, 0x42])), .nonETesto, "un file con byte nulli non è un testo")
-        XCTAssertNil(errore("rose.csv", Data("Giocatore;Costo\nÇalhanoğlu;18\n".utf8)), "accenti e simboli sono testo normale")
+        XCTAssertNil(errore("rose.csv", Data("Giocatore;Costo\nÇalvaroğlu;18\n".utf8)), "accenti e simboli sono testo normale")
     }
 
     func testIlNomeNonPuoRompereLIntestazione() {
@@ -130,7 +130,7 @@ final class ImportaFileTests: XCTestCase {
     func testUnCsvSiImportaConNomeETipoGiusti() async throws {
         let s = server()
         let vm = ImportaExcelViewModel(server: s)
-        await vm.importa(.success([try file("rose.csv", Data("Squadra;Ruolo;Giocatore\nA;P;Giocatore 089\n".utf8))]))
+        await vm.importa(.success([try file("rose.csv", Data("Squadra;Ruolo;Giocatore\nA;P;Sorvani\n".utf8))]))
         XCTAssertNil(vm.errore)
         XCTAssertEqual(vm.esito?.riepilogo, "Fatto")
         XCTAssertEqual(s.fileCaricati.count, 1)
@@ -142,8 +142,8 @@ final class ImportaFileTests: XCTestCase {
     func testTsvETestoPassanoEIlTipoTornaGiusto() async throws {
         let s = server()
         let vm = ImportaExcelViewModel(server: s)
-        await vm.importa(.success([try file("rose.tsv", Data("A\tP\tSommer\n".utf8))]))
-        await vm.importa(.success([try file("rose.txt", Data("A P Giocatore 089\n".utf8))]))
+        await vm.importa(.success([try file("rose.tsv", Data("A\tP\tSorvani\n".utf8))]))
+        await vm.importa(.success([try file("rose.txt", Data("A P Sorvani\n".utf8))]))
         XCTAssertEqual(s.fileCaricati.map(\.nome), ["rose.csv", "rose.txt"])
         XCTAssertEqual(s.fileCaricati.map(\.tipo), ["text/csv", "text/plain"])
     }

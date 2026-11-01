@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import Schieraxi
 
-/// Legge i file JSON di `Tests/Fixtures` (risposte vere del server, copiate da una lega reale) dal bundle dei test.
+/// Legge i file JSON di `Tests/Fixtures` (risposte del server con dati inventati) dal bundle dei test.
 enum Fixture {
     private final class Ancora {}
 

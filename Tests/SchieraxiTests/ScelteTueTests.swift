@@ -9,14 +9,14 @@ final class ScelteTueTests: XCTestCase {
     func testBloccoCompleto() throws {
         let s = try leggi("""
         {"giornate": 9, "meglio_tua": 5, "meglio_consigliata": 3, "pari": 1, "punti_differenza": 4.5, "percentuale_tua": 56, "pochi_dati": false,
-         "per_giornata": [{"stagione": "2026-27", "giornata": 9, "hai_scelto": ["Giocatore 071"], "consigliava": ["Dumfries"],
+         "per_giornata": [{"stagione": "2026-27", "giornata": 9, "hai_scelto": ["Orsetti"], "consigliava": ["Dunfrey"],
                            "punti_tua": 63.5, "punti_consigliata": 71.0, "differenza": -7.5, "esito": "consigliata"}]}
         """)
         let t = try XCTUnwrap(ScelteTueTesto(s))
         XCTAssertEqual(t.numeroGrande, "5 su 9")
         XCTAssertEqual(t.fraseCommento, "Hai avuto ragione nel 56% delle giornate.")
         XCTAssertEqual(t.frasePunti, "In totale +4,5 punti rispetto al consiglio: ci hai guadagnato.")
-        XCTAssertEqual(t.righe.first?.frase, "Hai messo Giocatore 071 al posto di Dumfries.")
+        XCTAssertEqual(t.righe.first?.frase, "Hai messo Orsetti al posto di Dunfrey.")
         XCTAssertEqual(t.righe.first?.esito, .consigliata)
         XCTAssertTrue(t.voceRiepilogo.contains("meglio tu 5 volte"))
     }

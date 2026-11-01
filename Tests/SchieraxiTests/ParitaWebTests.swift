@@ -211,15 +211,15 @@ final class DiarioEBackupTests: XCTestCase {
         let dati = Data("""
         {"giornate": [
           {"stagione": "2026-27", "giornata": 9,
-           "consigliata": {"modulo": "3-4-3", "atteso": 68.5, "reale": 71.0, "titolari": [{"id": 1, "nome": "Giocatore 089"}, {"id": 2, "nome": "Giocatore 046"}]},
-           "schierata": {"modulo": "3-5-2", "atteso": 66.0, "reale": 63.5, "titolari": [{"id": 1, "nome": "Giocatore 089"}, {"id": 3, "nome": "Giocatore 071"}]}},
+           "consigliata": {"modulo": "3-4-3", "atteso": 68.5, "reale": 71.0, "titolari": [{"id": 1, "nome": "Sorvani"}, {"id": 2, "nome": "Lemao"}]},
+           "schierata": {"modulo": "3-5-2", "atteso": 66.0, "reale": 63.5, "titolari": [{"id": 1, "nome": "Sorvani"}, {"id": 3, "nome": "Orsetti"}]}},
           {"giornata": 8}
         ], "sintesi": {"giornate": 1, "punti_schierata": 63.5, "punti_consigliata": 71.0, "meglio_tua": 0, "meglio_consigliata": 1}}
         """.utf8)
         let d: DiarioRisposta = try Decodifica.decodifica(dati)
         XCTAssertEqual(d.giornate?.count, 2)
         XCTAssertEqual(d.sintesi?.puntiSchierata, 63.5)
-        XCTAssertEqual(d.giornate?.first?.confronto?.fraseCambi, "Hai cambiato 1: Giocatore 071 al posto di Giocatore 046.")
+        XCTAssertEqual(d.giornate?.first?.confronto?.fraseCambi, "Hai cambiato 1: Orsetti al posto di Lemao.")
         XCTAssertNil(d.giornate?.last?.confronto, "senza formazioni non c'è un confronto")
     }
 

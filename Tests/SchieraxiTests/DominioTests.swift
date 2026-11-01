@@ -78,13 +78,13 @@ final class DominioTests: XCTestCase {
 
     func testTestoDellaFormazione() throws {
         let p = try giocatore(1, "Viscardi", ruolo: "P")
-        let d1 = try giocatore(2, "Giocatore 084")
+        let d1 = try giocatore(2, "Rrufani")
         let d2 = try giocatore(3, "Kaleo")
         let c = try giocatore(4, "Polimeni", ruolo: "C")
         let a = try giocatore(5, "Bolly", ruolo: "A")
         let panchina = [try giocatore(6, "Bilsen", ruolo: "P"), try giocatore(7, "Nesti", ruolo: "P")]
         let testo = TestoFormazione.crea(giornata: 9, modulo: "2-1-1", titolari: [a, c, d1, p, d2], panchina: panchina)
-        XCTAssertEqual(testo, "Giornata 9 · 2-1-1\nP: Viscardi\nD: Giocatore 084, Kaleo\nC: Polimeni\nA: Bolly\nPanchina: 1) Bilsen, 2) Nesti")
+        XCTAssertEqual(testo, "Giornata 9 · 2-1-1\nP: Viscardi\nD: Rrufani, Kaleo\nC: Polimeni\nA: Bolly\nPanchina: 1) Bilsen, 2) Nesti")
         XCTAssertFalse(TestoFormazione.crea(giornata: 1, modulo: "x", titolari: [], panchina: []).contains("Panchina"))
     }
 
@@ -92,14 +92,14 @@ final class DominioTests: XCTestCase {
         XCTAssertEqual(try giocatore(1, "Marzetti L.").nomeCorto, "Marzetti")
         XCTAssertEqual(try giocatore(1, "De Brandt").nomeCorto, "De Brandt")
         XCTAssertEqual(try giocatore(1, "Corsi S.").nomeCorto, "Corsi")
-        XCTAssertEqual(try giocatore(1, "Pedro").nomeCorto, "Pedro")
+        XCTAssertEqual(try giocatore(1, "Pelayo").nomeCorto, "Pelayo")
     }
 
     // MARK: confronto
 
     func testConfrontoSchieratoEVincitore() throws {
         var c: Confronto = try Fixture.decodifica("confronto")
-        XCTAssertEqual(c.vincitore?.nome, "Giocatore 084")
+        XCTAssertEqual(c.vincitore?.nome, "Rrufani")
         XCTAssertNil(c.schierato, "tutti e due titolari: non c'è chi schierare")
         XCTAssertTrue(c.fattoriVisibili.contains { $0.chiave == "giocare" })
         XCTAssertGreaterThanOrEqual(c.massimoEffetto, 0.3)
@@ -109,7 +109,7 @@ final class DominioTests: XCTestCase {
         // uno titolare e l'altro in panchina: si schiera il titolare
         let json = String(decoding: try Fixture.dati("confronto"), as: UTF8.self).replacingOccurrences(of: "\"posto_b\":\"titolare\"", with: "\"posto_b\":\"panchina\"")
         c = try Decodifica.decodifica(Data(json.utf8))
-        XCTAssertEqual(c.schierato?.nome, "Giocatore 084")
+        XCTAssertEqual(c.schierato?.nome, "Rrufani")
     }
 
     @MainActor
@@ -323,11 +323,11 @@ final class DominioTests: XCTestCase {
 
 final class AvatarTests: XCTestCase {
     func testInizialiDelCognome() {
-        XCTAssertEqual(AvatarGiocatore.iniziali("Giocatore 045"), "MA")
-        XCTAssertEqual(AvatarGiocatore.iniziali("Giovanni Di Lorenzo"), "DI")
-        XCTAssertEqual(AvatarGiocatore.iniziali("Pedro"), "PE")
-        XCTAssertEqual(AvatarGiocatore.iniziali("Giocatore 033 Çalhanoğlu"), "ÇA")
-        XCTAssertEqual(AvatarGiocatore.iniziali("N'Dicka"), "ND")
+        XCTAssertEqual(AvatarGiocatore.iniziali("Leonel Marténi"), "MA")
+        XCTAssertEqual(AvatarGiocatore.iniziali("Gianni Di Corvara"), "DI")
+        XCTAssertEqual(AvatarGiocatore.iniziali("Pelayo"), "PE")
+        XCTAssertEqual(AvatarGiocatore.iniziali("Hamit Çalvaroğlu"), "ÇA")
+        XCTAssertEqual(AvatarGiocatore.iniziali("N'Dolani"), "ND")
         XCTAssertNil(AvatarGiocatore.iniziali(nil))
         XCTAssertNil(AvatarGiocatore.iniziali("   "))
         XCTAssertNil(AvatarGiocatore.iniziali("12 34"), "senza lettere niente iniziali")
@@ -353,7 +353,7 @@ final class DaFareTests: XCTestCase {
 
     func testSiLeggeIlContratto() throws {
         let o = try oggi(#"""
-        [{"id": "dubbio-5", "tipo": "dubbio", "testo": "Giocatore 044 e' in dubbio", "priorita": 1, "azione": "Sostituisci",
+        [{"id": "dubbio-5", "tipo": "dubbio", "testo": "Leonel e' in dubbio", "priorita": 1, "azione": "Sostituisci",
           "destinazione": {"scheda": "formazione", "sezione": "formazione", "link": "schieraxi://formazione"}, "giocatore": {"id": 5}},
          {"id": 7, "tipo": "rose", "testo": "Aggiorna le rose", "priorita": 2, "azione": "Aggiorna", "destinazione": {"sezione": "lega"}}]
         """#)

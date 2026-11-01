@@ -144,8 +144,8 @@ final class DubbiWidgetTests: XCTestCase {
         {"giornata": 11, "inizio": "2026-10-31 18:30", "con_probabili": false,
          "formazione": {"modulo": "3-4-3", "punteggio_atteso": 73.7},
          "avvisi": [
-           {"id": 5, "nome": "Giocatore 044", "ruolo": "A", "squadra": "inter", "tipo": "dubbio", "in_formazione": true, "p_voto": 0.55},
-           {"id": 6, "nome": "Giocatore 004", "ruolo": "D", "tipo": "diffidato", "in_formazione": true},
+           {"id": 5, "nome": "Leonel Marteni", "ruolo": "A", "squadra": "inter", "tipo": "dubbio", "in_formazione": true, "p_voto": 0.55},
+           {"id": 6, "nome": "Bastrani", "ruolo": "D", "tipo": "diffidato", "in_formazione": true},
            {"id": 7, "nome": "Riserva", "ruolo": "C", "tipo": "infortunato", "in_formazione": false}
          ]}
         """#
