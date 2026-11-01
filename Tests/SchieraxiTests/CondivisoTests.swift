@@ -115,6 +115,76 @@ final class CodiceWidgetTests: XCTestCase {
         }
     }
 
+    // MARK: da dove il widget prende indirizzo e token
+
+    /// Come `ScaricaOggi.indirizzoBase` del widget: solo https, senza «/» finale.
+    private func pulisci(_ t: String) -> String? {
+        var s = t.trimmingCharacters(in: .whitespacesAndNewlines)
+        while s.hasSuffix("/") { s.removeLast() }
+        return s.hasPrefix("https://") && s.count > 8 ? s : nil
+    }
+
+    private func dove(_ condiviso: DatiCondivisi = DatiCondivisi(), codice: String = "", scritto: String = "") -> (indirizzo: String, token: String?)? {
+        CodiceWidget.destinazione(condiviso: condiviso, codice: codice, scritto: scritto, pulisci: pulisci)
+    }
+
+    func testSenzaAppGroupVinceIlCodiceIncollato() {
+        let codice = CodiceWidget.crea(indirizzo: "https://uno.invalid", token: "fw_codiceIncollato123")
+        let d = dove(codice: codice, scritto: "https://scritto.invalid")
+        XCTAssertEqual(d?.indirizzo, "https://uno.invalid")
+        XCTAssertEqual(d?.token, "fw_codiceIncollato123")
+    }
+
+    func testAppGroupConTokenVinceSulCodice() {
+        let gruppo = DatiCondivisi(indirizzo: "https://app.invalid", token: "fw_dalGruppo12345678", tokenPerIndirizzo: "https://app.invalid")
+        let codice = CodiceWidget.crea(indirizzo: "https://uno.invalid", token: "fw_codiceIncollato123")
+        let d = dove(gruppo, codice: codice)
+        XCTAssertEqual(d?.indirizzo, "https://app.invalid")
+        XCTAssertEqual(d?.token, "fw_dalGruppo12345678")
+    }
+
+    func testAppGroupSenzaTokenLasciaPassareIlCodice() {
+        // il gruppo passa l'indirizzo ma non il token: il codice incollato deve valere, altrimenti il widget resta «da collegare»
+        let gruppo = DatiCondivisi(indirizzo: "https://app.invalid")
+        let codice = CodiceWidget.crea(indirizzo: "https://app.invalid", token: "fw_codiceIncollato123")
+        XCTAssertEqual(dove(gruppo, codice: codice)?.token, "fw_codiceIncollato123")
+        // senza codice resta l'indirizzo del gruppo, senza token
+        let soloGruppo = dove(gruppo)
+        XCTAssertEqual(soloGruppo?.indirizzo, "https://app.invalid")
+        XCTAssertNil(soloGruppo?.token)
+    }
+
+    func testIlTokenDiUnAltroServerNonSiUsa() {
+        let gruppo = DatiCondivisi(indirizzo: "https://app.invalid", token: "fw_altroServer123456", tokenPerIndirizzo: "https://altro.invalid")
+        XCTAssertNil(dove(gruppo)?.token)
+    }
+
+    func testSoloIndirizzoScrittoOppureNiente() {
+        XCTAssertEqual(dove(scritto: "https://scritto.invalid/")?.indirizzo, "https://scritto.invalid")
+        XCTAssertNil(dove(scritto: "http://scritto.invalid")?.indirizzo, "solo https")
+        XCTAssertNil(dove(codice: "schieraxi1.!!!"))
+        XCTAssertNil(dove())
+    }
+
+    // MARK: «Tocca per collegare»
+
+    func testQuandoIlWidgetVaCollegato() {
+        XCTAssertTrue(CollegamentoWidget.daCollegare(haDati: false, indirizzoMancante: true, accessoRichiesto: false))
+        XCTAssertTrue(CollegamentoWidget.daCollegare(haDati: false, indirizzoMancante: false, accessoRichiesto: true))
+        XCTAssertTrue(CollegamentoWidget.daCollegare(haDati: true, indirizzoMancante: false, accessoRichiesto: true),
+                      "codice non più valido: si ricollega anche se c'è una copia vecchia")
+        XCTAssertFalse(CollegamentoWidget.daCollegare(haDati: false, indirizzoMancante: false, accessoRichiesto: false), "solo rete: si aspetta")
+        XCTAssertFalse(CollegamentoWidget.daCollegare(haDati: true, indirizzoMancante: false, accessoRichiesto: false))
+    }
+
+    func testIlToccoDelWidgetApreCollegaIlWidget() throws {
+        let url = try XCTUnwrap(CollegamentoWidget.url)
+        XCTAssertEqual(Collegamenti.interpreta(url), .collegaWidget)
+        XCTAssertEqual(Collegamenti.interpreta(try XCTUnwrap(URL(string: "schieraxi://widget"))), .collegaWidget)
+        XCTAssertNil(Collegamenti.interpreta(try XCTUnwrap(URL(string: "schieraxi://widget/boh"))))
+        XCTAssertLessThanOrEqual(CollegamentoWidget.durataAppunti, 10 * 60, "il codice negli appunti dura poco")
+    }
+
     func testLaDiagnosticaDiceCosaManca() {
         let cartella = FileManager.default.temporaryDirectory.appendingPathComponent("diag-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
