@@ -37,6 +37,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Numero della build (dopo il cambio di repository riparte da 200)
+        run: echo "BUILD_N=$((GITHUB_RUN_NUMBER + 200))" >> "$GITHUB_ENV"
       - name: Installa XcodeGen
         run: brew install xcodegen
       - name: Crea il progetto Xcode
@@ -47,7 +49,7 @@ jobs:
           xcodebuild -project Schieraxi.xcodeproj -scheme Schieraxi -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -archivePath build/Schieraxi.xcarchive \
             archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            MARKETING_VERSION="1.0.${{ github.run_number }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            MARKETING_VERSION="1.0.${{ env.BUILD_N }}" CURRENT_PROJECT_VERSION="${{ env.BUILD_N }}" \
             2>&1 | tee build.log | tail -n 40
       - name: Crea l'IPA
         env:
@@ -90,8 +92,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # il sorgente di SideStore: l'indirizzo fisso è .../releases/latest/download/sorgente.json
-          python3 scripts/genera_sorgente.py "$GITHUB_REPOSITORY" "${{ github.run_number }}" Schieraxi.ipa
-          gh release create "build-${{ github.run_number }}" Schieraxi.ipa sorgente.json --title "Build ${{ github.run_number }}" --notes "IPA non firmato, da installare con SideStore. Aggiornamenti automatici: aggiungi in SideStore il sorgente https://github.com/$GITHUB_REPOSITORY/releases/latest/download/sorgente.json" --repo "$GITHUB_REPOSITORY"
+          python3 scripts/genera_sorgente.py "$GITHUB_REPOSITORY" "${{ env.BUILD_N }}" Schieraxi.ipa
+          gh release create "build-${{ env.BUILD_N }}" Schieraxi.ipa sorgente.json --title "Build ${{ env.BUILD_N }}" --notes "IPA non firmato, da installare con SideStore. Aggiornamenti automatici: aggiungi in SideStore il sorgente https://github.com/$GITHUB_REPOSITORY/releases/latest/download/sorgente.json" --repo "$GITHUB_REPOSITORY"
       - name: Maschera il log (il repository è pubblico)
         if: failure()
         env:
