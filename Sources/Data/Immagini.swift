@@ -59,7 +59,7 @@ final class Immagini: ObservableObject {
     // MARK: elenchi
 
     /// Chi ha la foto e quali squadre hanno stemma e maglia. Se il server non risponde si usano gli ultimi elenchi salvati su disco
-    /// (così le foto già scaricate si vedono anche con Tailscale spento).
+    /// (così le foto già scaricate si vedono anche senza rete privata).
     func caricaElenchi() async {
         if let foto: FotoDisponibili = await leggiElenco("/api/foto-disponibili") {
             fotoDisponibili = Set(foto.ids)

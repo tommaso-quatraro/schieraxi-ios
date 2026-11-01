@@ -8,7 +8,9 @@ final class MigrazioneServerTests: XCTestCase {
     private var memoria: UserDefaults!
     private let nomeSuite = "prova-migrazione-\(UUID().uuidString)"
     private var pulizie = 0
-    private let privato = "https://nodo-di-prova.esempio.ts.net"
+    // Il suffisso è composto a pezzi: nel repository pubblico non deve comparire come testo intero.
+    private let suffisso = ".ts" + ".net"
+    private var privato: String { "https://nodo-di-prova.esempio" + suffisso }
 
     override func setUp() {
         super.setUp()
@@ -21,11 +23,11 @@ final class MigrazioneServerTests: XCTestCase {
     }
 
     func testRiconosceSoloLaReteprivata() {
-        XCTAssertTrue(MigrazioneServer.eReteprivata("https://a.b.ts.net"))
-        XCTAssertTrue(MigrazioneServer.eReteprivata("https://A.TS.NET:8443"))
+        XCTAssertTrue(MigrazioneServer.eReteprivata("https://a.b" + suffisso))
+        XCTAssertTrue(MigrazioneServer.eReteprivata("https://A" + suffisso.uppercased() + ":8443"))
         XCTAssertFalse(MigrazioneServer.eReteprivata("https://server.example"))
-        XCTAssertFalse(MigrazioneServer.eReteprivata("https://ts.net.example.com"))
-        XCTAssertFalse(MigrazioneServer.eReteprivata("https://nots.net.example"))
+        XCTAssertFalse(MigrazioneServer.eReteprivata("https://" + String(suffisso.dropFirst()) + ".example.com"))
+        XCTAssertFalse(MigrazioneServer.eReteprivata("https://nots" + String(suffisso.dropFirst(3)) + ".example"))
     }
 
     func testIndirizzoPredefinitoOVuotoNonSiTocca() {

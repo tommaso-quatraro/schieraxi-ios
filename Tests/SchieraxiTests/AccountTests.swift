@@ -318,7 +318,7 @@ final class SessioneAccountTests: XCTestCase {
         let s = sessione(server)
         let prima = s.stato
         await s.verifica()
-        XCTAssertEqual(s.stato, prima, "con Tailscale spento si resta dov'eravamo (con i dati salvati)")
+        XCTAssertEqual(s.stato, prima, "con la rete spenta si resta dov'eravamo (con i dati salvati)")
         XCTAssertEqual(pulizie, 0)
     }
 
@@ -523,7 +523,7 @@ final class ConfiguraLegaTests: XCTestCase {
     func testRiconoscimentoDelMessaggioDiLegaSenzaRose() {
         XCTAssertTrue("Il server dice: Nessuna rosa importata".dicePerNessunaRosa)
         XCTAssertTrue("nessuna ROSA importata".dicePerNessunaRosa)
-        XCTAssertFalse("Non riesco a raggiungere il server. Controlla che Tailscale sia attivo.".dicePerNessunaRosa)
+        XCTAssertFalse("Non riesco a raggiungere il server. Controlla la connessione.".dicePerNessunaRosa)
     }
 }
 

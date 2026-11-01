@@ -88,7 +88,7 @@ final class CaricatoreTests: XCTestCase {
         XCTAssertTrue(presente, "la risposta riuscita è stata salvata su disco")
 
         // nuova «apertura» dell'app, server irraggiungibile: restano i dati salvati
-        let spento = ServerDiProva(indirizzo: indirizzo) { _, _, _ in throw ErroreApi.rete("Tailscale spento") }
+        let spento = ServerDiProva(indirizzo: indirizzo) { _, _, _ in throw ErroreApi.rete("rete spenta") }
         let secondo = Caricatore<Oggi>("/api/oggi", ascolta: false, server: spento)
         await secondo.ricarica()
         XCTAssertEqual(secondo.dato?.giornata, 9, "i dati salvati si mostrano lo stesso")
