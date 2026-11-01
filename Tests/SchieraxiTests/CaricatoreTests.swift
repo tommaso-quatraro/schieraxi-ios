@@ -166,6 +166,27 @@ final class CacheTests: XCTestCase {
         XCTAssertTrue(Cache.nomeFile("/api/oggi", "https://a").hasSuffix(".json"))
     }
 
+    func testIGiorniDelCertificatoNonCambianoIlNomeDellaCopia() {
+        let a = "https://a"
+        XCTAssertEqual(Cache.nomeFile("/api/oggi?certificato_giorni=5", a), Cache.nomeFile("/api/oggi?certificato_giorni=4", a))
+        XCTAssertEqual(Cache.nomeFile("/api/oggi?certificato_giorni=-2", a), Cache.nomeFile("/api/oggi", a))
+        XCTAssertEqual(Cache.percorsoStabile("/api/x?a=1&certificato_giorni=3&b=2"), "/api/x?a=1&b=2")
+        XCTAssertEqual(Cache.percorsoStabile("/api/oggi?certificato_giorni=3"), "/api/oggi")
+        XCTAssertNotEqual(Cache.nomeFile("/api/giocatori?q=a", a), Cache.nomeFile("/api/giocatori?q=b", a), "gli altri parametri contano ancora")
+    }
+
+    func testLaCopiaDiOggiSalvataIeriSiRitrovaOggi() async throws {
+        let indirizzo = "https://prova-oggi-\(UUID().uuidString).invalid"
+        // ieri mancavano 5 giorni alla scadenza del certificato, oggi 4: senza rete l'app deve ritrovare la copia di ieri
+        Cache.salva(Data("{}".utf8), OggiRepository.percorso(giorniCertificato: 5), indirizzo: indirizzo)
+        var trovata = false
+        for _ in 0..<100 where !trovata {
+            trovata = await Cache.leggi(OggiRepository.percorso(giorniCertificato: 4), indirizzo: indirizzo) != nil
+            if !trovata { try await Task.sleep(nanoseconds: 20_000_000) }
+        }
+        XCTAssertTrue(trovata)
+    }
+
     func testLeImmaginiStannoInUnaCartellaASe() async throws {
         let indirizzo = "https://prova-img-\(UUID().uuidString).invalid"
         Cache.salva(Data("png".utf8), "/api/foto/1", indirizzo: indirizzo, cartella: "img")
