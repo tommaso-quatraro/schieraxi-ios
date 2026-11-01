@@ -127,10 +127,12 @@ struct GraficoAttesoFatto: View {
     let a = AffidabilitaDiario(giornate: 10, scartoMedio: 4.2, erroreMedio: -1.5, puntiMediAttesi: 68.4, puntiMediFatti: 66.9,
                                dentroFascia: 7, conFascia: 10, percentualeDentro: 70, fasciaDichiarata: 80, pochiDati: false,
                                giornateMinime: 8, giudizio: "in_linea")
-    let punti = (1...10).map { g in
-        PuntoAttesoFatto(giornata: g, atteso: 66 + Double(g % 4), fatti: 62 + Double((g * 7) % 12), basso: 58 + Double(g % 4), alto: 75 + Double(g % 4),
-                         dentro: !(g == 3 || g == 8 || g == 9))
-    }
+    let punti: [PuntoAttesoFatto] = [
+        PuntoAttesoFatto(giornata: 5, atteso: 66.0, fatti: 70.5, basso: 58.0, alto: 74.5, dentro: true),
+        PuntoAttesoFatto(giornata: 6, atteso: 67.5, fatti: 55.0, basso: 59.5, alto: 76.0, dentro: false),
+        PuntoAttesoFatto(giornata: 7, atteso: 65.0, fatti: 66.0, basso: 57.0, alto: 73.5, dentro: true),
+        PuntoAttesoFatto(giornata: 8, atteso: 68.0, fatti: 79.0, basso: 60.0, alto: 76.5, dentro: false),
+    ]
     if let t = TestoAffidabilita(a) {
         List { Section(TestoAffidabilita.titolo) { QuantoCiAbbiamoPresoView(testo: t, punti: punti) } }
     }
