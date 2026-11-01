@@ -307,8 +307,24 @@ final class SessioneAccount: ObservableObject {
                 codiceDaMostrare = "K7M2P-XQ4NH-W8RTV"
             case "account", "rose":
                 stato = .connesso(utenteDemo)
+                if Demo.argomento("DEMO_ACCOUNT_CHE_CAMBIA") != nil { simulaRisposteDemo(utenteDemo) }
             default:
                 stato = .daAccedere
+            }
+        }
+    }
+
+    /// Solo per i test di interfaccia (`-DEMO_ACCESSO account -DEMO_ACCOUNT_CHE_CAMBIA 1`): come se ogni mezzo secondo arrivasse
+    /// la risposta di `/api/account/me` con dati un po' diversi (stesso utente, email che va e viene). Serve a provare che
+    /// i fogli dell'account (cambia password, email, ...) restano aperti mentre i dati dell'account si aggiornano.
+    private func simulaRisposteDemo(_ u: Utente) {
+        Task { @MainActor [weak self] in
+            for giro in 1...600 {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                guard let self, !Task.isCancelled else { return }
+                let pari = giro.isMultiple(of: 2)
+                email = pari ? nil : "mister.rossi@example.invalid"
+                stato = .connesso(Utente(id: u.id, nomeUtente: u.nomeUtente, ruolo: u.ruolo, creato: pari ? nil : "2026-09-01"))
             }
         }
     }

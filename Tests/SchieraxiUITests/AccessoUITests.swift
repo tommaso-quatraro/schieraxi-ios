@@ -4,10 +4,10 @@ import XCTest
 final class AccessoUITests: XCTestCase {
     private var app: XCUIApplication!
 
-    private func avvia(_ scenario: String) {
+    private func avvia(_ scenario: String, altri: [String] = []) {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments += ["-DEMO", "-DEMO_ACCESSO", scenario, "-AppleLanguages", "(it)", "-AppleLocale", "it_IT"]
+        app.launchArguments += ["-DEMO", "-DEMO_ACCESSO", scenario, "-AppleLanguages", "(it)", "-AppleLocale", "it_IT"] + altri
         app.launch()
     }
 
@@ -101,6 +101,71 @@ final class AccessoUITests: XCTestCase {
         let esci = app.buttons["Esci"]
         for _ in 0..<8 where !esci.exists { app.swipeUp() }
         XCTAssertTrue(esci.waitForExistence(timeout: 5))
+    }
+
+    /// Apre un foglio dell'account toccando `voce` e aspetta `segno` (un elemento del foglio). Il tocco perso sul simulatore
+    /// carico si ripete (al massimo 3 volte, solo se la voce c'è ancora).
+    private func apriFoglio(_ voce: XCUIElement, segno: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(voce.waitForExistence(timeout: 30), "manca la voce del foglio", file: file, line: line)
+        var aperto = false
+        for _ in 0..<3 where !aperto {
+            if voce.exists {
+                if !voce.isHittable { app.swipeUp() }   // voce sotto il bordo (iPhone piccolo, testo grande)
+                voce.tap()
+            }
+            aperto = segno.waitForExistence(timeout: 10)
+        }
+        XCTAssertTrue(aperto, "il foglio non si apre", file: file, line: line)
+    }
+
+    /// Mentre il foglio è aperto arrivano dati nuovi dell'account (in demo ogni mezzo secondo): deve restare aperto.
+    private func restaAperto(_ segno: XCUIElement, _ nome: String, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertFalse(segno.waitForNonExistence(timeout: 4), "il foglio «\(nome)» si è chiuso da solo", file: file, line: line)
+    }
+
+    /// Chiude il foglio con il pulsante della sua barra (`titolo`): sotto c'è la barra delle Impostazioni con un altro «Chiudi».
+    private func chiudiFoglio(_ titolo: String, _ pulsante: String, segno: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let b = app.navigationBars[titolo].buttons[pulsante]
+        XCTAssertTrue(b.waitForExistence(timeout: 10), "manca «\(pulsante)»", file: file, line: line)
+        b.tap()
+        XCTAssertTrue(segno.waitForNonExistence(timeout: 10), "il foglio non si chiude con «\(pulsante)»", file: file, line: line)
+    }
+
+    /// Build 219: «Cambia password» si apriva e si chiudeva subito da solo. Con i dati dell'account che cambiano di continuo
+    /// (`-DEMO_ACCOUNT_CHE_CAMBIA`) ogni foglio dell'account deve restare aperto e non perdere quello che si scrive.
+    func testFogliDellAccountRestanoApertiQuandoArrivanoDatiNuovi() {
+        avvia("account", altri: ["-DEMO_ACCOUNT_CHE_CAMBIA", "1"])
+        attendi("Il tuo account")
+
+        // Cambia password: si apre, resta aperto, il testo scritto resta
+        let attuale = app.secureTextFields["Password attuale"]
+        apriFoglio(app.buttons["Cambia password"], segno: attuale)
+        restaAperto(attuale, "Cambia password")
+        attuale.tap()
+        attuale.typeText("vecchia-prova-1")
+        restaAperto(attuale, "Cambia password")
+        XCTAssertFalse((attuale.value as? String ?? "").isEmpty, "la password scritta non deve sparire")
+        XCTAssertTrue(app.secureTextFields["Nuova password"].exists)
+        chiudiFoglio("Cambia password", "Annulla", segno: attuale)
+
+        // Nuovo codice di recupero
+        let codice = app.navigationBars["Codice di recupero"]
+        apriFoglio(app.buttons["Nuovo codice per recuperare l'accesso"], segno: codice)
+        restaAperto(codice, "Codice di recupero")
+        chiudiFoglio("Codice di recupero", "Annulla", segno: codice)
+
+        // Email (la voce cambia nome mentre l'email va e viene)
+        let email = app.navigationBars["Email dell'account"]
+        let voceEmail = app.buttons.matching(NSPredicate(format: "label IN %@", ["Aggiungi un'email", "Gestisci l'email"])).firstMatch
+        apriFoglio(voceEmail, segno: email)
+        restaAperto(email, "Email dell'account")
+        chiudiFoglio("Email dell'account", "Chiudi", segno: email)
+
+        // Elimina l'account
+        let elimina = app.navigationBars["Elimina l'account"]
+        apriFoglio(app.buttons["Elimina l'account"].firstMatch, segno: elimina)
+        restaAperto(elimina, "Elimina l'account")
+        chiudiFoglio("Elimina l'account", "Annulla", segno: elimina)
     }
 
     func testRetAssenteDiceCosaFare() {
