@@ -74,6 +74,7 @@ final class ServerHTTPTests: XCTestCase {
         let r = try XCTUnwrap(ProtocolloFinto.ultimaRichiesta)
         XCTAssertEqual(r.url?.absoluteString, "https://prova.invalid:8443/api/oggi", "la barra finale dell'indirizzo si toglie")
         XCTAssertEqual(r.value(forHTTPHeaderField: "X-Fanta"), "1", "senza questa intestazione il server rifiuta le modifiche")
+        XCTAssertEqual(r.value(forHTTPHeaderField: "Accept-Language"), "it", "i testi del server sempre in italiano, qualunque sia la lingua del telefono")
         XCTAssertEqual(r.httpMethod, "GET")
     }
 

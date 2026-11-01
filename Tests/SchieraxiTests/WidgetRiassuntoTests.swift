@@ -251,6 +251,29 @@ final class ScaricoWidgetTests: XCTestCase {
         XCTAssertEqual(visto.valore, ["\"vecchio\"", "Bearer fw_tokenDiProva123456", "/api/widget"])
     }
 
+    func testSiChiedeSempreLItalianoEL_ETagConSuffissoNonSiTocca() async {
+        let visto = Scatola<[String]>()
+        let s = sessione { r in
+            visto.valore = [r.value(forHTTPHeaderField: "Accept-Language") ?? "-", r.value(forHTTPHeaderField: "If-None-Match") ?? "-"]
+            return (304, [:], Data())
+        }
+        _ = await ScaricoWidget.scarica(base: "https://prova-widget.invalid", token: nil, etag: "\"abc-en\"", sessione: s)
+        XCTAssertEqual(visto.valore, ["it", "\"abc-en\""])
+    }
+
+    func testLeFunzioniSpenteSiLeggonoEUnaChiaveAssenteValeAcceso() throws {
+        let con = #"{"giornata": 3, "funzioni": {"live": false, "widget_extra": false, "seguiti": true}}"#
+        let w = try XCTUnwrap(RiassuntoWidget.leggi(Data(con.utf8)))
+        XCTAssertFalse(w.acceso(FunzioneWidget.extra))
+        XCTAssertFalse(w.acceso("live"))
+        XCTAssertTrue(w.acceso("seguiti"))
+        XCTAssertTrue(w.acceso("diario"))
+        let senza = try XCTUnwrap(RiassuntoWidget.leggi(Data(#"{"giornata": 3}"#.utf8)))
+        XCTAssertTrue(senza.acceso(FunzioneWidget.extra))
+        let accesa = try XCTUnwrap(RiassuntoWidget.leggi(Data(#"{"funzioni": {"widget_extra": true}}"#.utf8)))
+        XCTAssertTrue(accesa.acceso(FunzioneWidget.extra))
+    }
+
     func testIlCodiceDelServerSiTraduce() async {
         let casi: [(Int, String)] = [(304, "nonCambiato"), (202, "inCalcolo"), (401, "accessoRichiesto"), (404, "nonDisponibile"), (403, "nonDisponibile"), (500, "errore")]
         for (codice, nome) in casi {
