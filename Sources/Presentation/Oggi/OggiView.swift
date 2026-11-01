@@ -275,6 +275,11 @@ struct OggiView: View {
                     .foregroundStyle(Color.verde)
                 }
             }
+        } else if oggi.daFare != nil {
+            Text("Nessuna azione utile oggi")
+                .font(.footnote).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
         }
     }
 
@@ -284,7 +289,12 @@ struct OggiView: View {
                 .font(.body).foregroundStyle((c.priorita ?? 3) == 1 ? Color.attenzione : .secondary)
                 .frame(width: latoIcona)
                 .accessibilityHidden(true)
-            Text(c.testo).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(c.testo).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                if let m = c.motivo?.trimmingCharacters(in: .whitespacesAndNewlines), !m.isEmpty {
+                    Text(m).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
             Spacer(minLength: 6)
             if let d = c.destinazione?.destinazione {
                 Button(c.azione ?? "Apri") { vaiA(d, tipo: c.tipo) }

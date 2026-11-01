@@ -26,7 +26,7 @@ struct AccountSezione: View {
         if sessione.multiutente, let utente = sessione.utente {
             Section("Il tuo account") {
                 RigaValore(titolo: "Nome", valore: utente.nome)
-                RigaValore(titolo: "Email", valore: sessione.emailMostrata ?? "Nessuna")
+                RigaValore(titolo: "Email", valore: (sessione.emailMostrata ?? "Nessuna") + (sessione.emailDaGoogle && sessione.emailMostrata != nil ? " (da Google)" : ""))
                 if mostraVoceEmail {
                     Button { foglio = .email } label: {
                         Label(sessione.email == nil ? "Aggiungi un'email" : "Gestisci l'email", systemImage: "envelope").labelStyle(.voce(.teal)).frame(minHeight: Tema.areaTocco)

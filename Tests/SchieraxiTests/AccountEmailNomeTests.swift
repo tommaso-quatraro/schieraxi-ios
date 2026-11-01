@@ -5,6 +5,17 @@ import XCTest
 // Solo indirizzi finti (example.invalid).
 
 final class AccountEmailNomeTests: XCTestCase {
+    func testOrigineDellEmailEFacoltativa() throws {
+        let nuovo: RispostaAccount = try Decodifica.decodifica(Data(#"{"multiutente": true, "email": "g@example.invalid", "email_origine": "google"}"#.utf8))
+        XCTAssertEqual(nuovo.emailOrigine, "google")
+        let vecchio: RispostaAccount = try Decodifica.decodifica(Data(#"{"multiutente": true, "email": "a@example.invalid"}"#.utf8))
+        XCTAssertNil(vecchio.emailOrigine)
+        let voce: DaFareVoce = try Decodifica.decodifica(Data(#"{"id": "x", "testo": "Ciao", "motivo": "Perché sì"}"#.utf8))
+        XCTAssertEqual(voce.motivo, "Perché sì")
+        let senza: DaFareVoce = try Decodifica.decodifica(Data(#"{"id": "y", "testo": "Ciao"}"#.utf8))
+        XCTAssertNil(senza.motivo)
+    }
+
     func testLEmailDiGoogleCompareDaSola() {
         XCTAssertEqual(ProfiloAccount.email(account: nil, inAttesa: nil, google: "g@example.invalid"), "g@example.invalid")
         XCTAssertEqual(ProfiloAccount.email(account: "a@example.invalid", inAttesa: nil, google: "g@example.invalid"), "a@example.invalid",
