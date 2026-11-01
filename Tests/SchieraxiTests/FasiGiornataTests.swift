@@ -75,7 +75,7 @@ final class FasiGiornataTests: XCTestCase {
         XCTAssertEqual(r.consigliata?.puntiFatti, 78)
         XCTAssertEqual(TestiFase.scarto(fatti: r.puntiFatti, attesi: r.puntiAttesi), "3,3 punti più del previsto")
         XCTAssertEqual(TestiFase.fascia(r), "Dentro la fascia prevista (tra 63 e 80)")
-        XCTAssertEqual(TestiFase.confronto(r), "Con la consigliata avresti fatto 78,0 punti: 3,5 in più.")
+        XCTAssertEqual(TestiFase.confronto(r), "Con la consigliata avresti fatto 78,0 punti: 3,5 punti in più.")
         XCTAssertNil(TestiFase.notaDiario(r))
         let p = try XCTUnwrap(o.prossimaGiornata)
         XCTAssertEqual(p.preparaDa, "2026-11-11 14:30")
