@@ -24,11 +24,14 @@ struct Colonne<Contenuto: View>: View {
     var spazio: CGFloat = 14
     var larghezzaMinima: CGFloat = 340
     var massimo: Int = 3
-    @ViewBuilder var contenuto: () -> Contenuto
+    let contenuto: Contenuto
+    init(spazio: CGFloat = 14, larghezzaMinima: CGFloat = 340, massimo: Int = 3, @ViewBuilder _ contenuto: () -> Contenuto) {
+        self.spazio = spazio; self.larghezzaMinima = larghezzaMinima; self.massimo = massimo; self.contenuto = contenuto()
+    }
     @Environment(\.dynamicTypeSize) private var taglia
 
     var body: some View {
-        ColonneLayout(spazio: spazio, larghezzaMinima: larghezzaMinima, massimo: taglia.isAccessibilitySize ? 1 : massimo) { contenuto() }
+        ColonneLayout(spazio: spazio, larghezzaMinima: larghezzaMinima, massimo: taglia.isAccessibilitySize ? 1 : massimo) { contenuto }
     }
 }
 

@@ -6,14 +6,17 @@ import SwiftUI
 struct FilaAdattiva<Contenuto: View>: View {
     var allineamento: VerticalAlignment = .center
     var spazio: CGFloat? = nil
-    @ViewBuilder var contenuto: () -> Contenuto
+    let contenuto: Contenuto
+    init(allineamento: VerticalAlignment = .center, spazio: CGFloat? = nil, @ViewBuilder _ contenuto: () -> Contenuto) {
+        self.allineamento = allineamento; self.spazio = spazio; self.contenuto = contenuto()
+    }
     @Environment(\.dynamicTypeSize) private var taglia
 
     var body: some View {
         let layout = taglia.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: spazio))
             : AnyLayout(HStackLayout(alignment: allineamento, spacing: spazio))
-        layout { contenuto() }
+        layout { contenuto }
     }
 }
 
