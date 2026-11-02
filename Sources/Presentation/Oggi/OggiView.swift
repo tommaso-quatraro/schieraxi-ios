@@ -194,6 +194,8 @@ struct OggiView: View {
                         Label("In corso", systemImage: "dot.radiowaves.left.and.right")
                             .symbolEffect(.variableColor.iterative, options: .repeating, isActive: !ridotto)
                             .font(.system(size: corpoGrande * 0.87, weight: .bold, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)   // testo molto grande: si rimpicciolisce invece di andare a capo a metà parola
                             .foregroundStyle(.white)
                         Text("formazione chiusa \(Quando.leggibile(oggi.chiusura))").font(.subheadline).foregroundStyle(.white.opacity(0.8))
                     }
@@ -304,7 +306,7 @@ struct OggiView: View {
                     .foregroundStyle(Color.verde)
                 }
             }
-        } else if oggi.daFare != nil {
+        } else if oggi.daFare != nil, oggi.conConsigli {   // durante e dopo la giornata la riga vuota non serve
             Text("Nessuna azione utile oggi")
                 .font(.footnote).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
