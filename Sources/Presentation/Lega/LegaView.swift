@@ -195,7 +195,8 @@ struct PaginaMercato<Contenuto: View>: View {
             contenuto()
         }
         .navigationTitle(titolo)
-        .navigationBarTitleDisplayMode(.inline)
+        // titolo grande come le altre pagine: in piccolo, accanto a lente e ingranaggio, sull'iPhone SE diventava «Elenco dei gioc…»
+        .navigationBarTitleDisplayMode(.large)
         .ricercaGlobale()
         .sheet(item: $vm.schedaAperta) { g in
             GiocatoreSheet(id: g.id, server: vm.server)
