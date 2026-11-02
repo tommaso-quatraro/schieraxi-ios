@@ -322,14 +322,14 @@ final class ScambiViewModelTests: XCTestCase {
         await vm.valutaOfferta()
         XCTAssertEqual(vm.erroreOfferta, "Incolla prima il messaggio.", "senza testo non si chiede niente")
         XCTAssertEqual(s.quante("da-testo"), 0)
-        vm.testoOfferta = "Ti do Kaleo e tu mi dai Mangoni, ci stai?"
+        vm.testoOfferta = "Ti do Barucci e tu mi dai Mangoni, ci stai?"
         await vm.valutaOfferta()
         XCTAssertNil(vm.erroreOfferta)
         XCTAssertEqual(vm.esitoOfferta?.con, "Lambda Rossa")
-        XCTAssertEqual(vm.esitoOfferta?.`do`, ["Kaleo"])
+        XCTAssertEqual(vm.esitoOfferta?.`do`, ["Barucci"])
         XCTAssertNotNil(vm.esitoOfferta?.analisi)
         let corpo = String(decoding: try XCTUnwrap(s.corpiInviati(a: "POST /api/scambi/da-testo").last), as: UTF8.self)
-        XCTAssertTrue(corpo.contains("Ti do Kaleo"), corpo)
+        XCTAssertTrue(corpo.contains("Ti do Barucci"), corpo)
     }
 
     func testOffertaConServerSpento() async {
@@ -355,14 +355,14 @@ final class ScambiViewModelTests: XCTestCase {
         let vm = AnalizzaScambioViewModel(server: s)
         XCTAssertFalse(vm.puoAnalizzare)
         vm.altra = "Lambda Rossa"
-        vm.doIds = [7414]
+        vm.doIds = [6523]
         vm.ricevoIds = [7485]
         XCTAssertTrue(vm.puoAnalizzare)
         await vm.analizza()
         XCTAssertEqual(vm.esito?.altra, "Lambda Rossa")
         XCTAssertNil(vm.errore)
         XCTAssertEqual(s.quante("GET /api/scambi/analizza?con=Lambda%20Rossa&do=7414&ricevo=7485&completo=true"), 1)
-        XCTAssertEqual(ArchivioScambi.leggi().first?.dai, ["Kaleo"], "lo scambio analizzato finisce nell'archivio")
+        XCTAssertEqual(ArchivioScambi.leggi().first?.dai, ["Barucci"], "lo scambio analizzato finisce nell'archivio")
     }
 }
 
@@ -383,7 +383,7 @@ final class MercatoEAstaViewModelTests: XCTestCase {
         XCTAssertEqual(vm.estiva.dato?.crediti, 500)
         XCTAssertEqual(vm.giocatori(vm.estiva.dato?.ruoli ?? []).count, 6)
         vm.ruolo = "P"
-        XCTAssertEqual(vm.giocatori(vm.estiva.dato?.ruoli ?? []).first?.nome, "Viscardi")
+        XCTAssertEqual(vm.giocatori(vm.estiva.dato?.ruoli ?? []).first?.nome, "Noraldi")
         XCTAssertEqual(s.quante("modo=riparazione"), 0, "la riparazione si carica solo quando la si sceglie")
         vm.modo = .riparazione
         await vm.carica()
