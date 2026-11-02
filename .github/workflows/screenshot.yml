@@ -24,6 +24,10 @@ on:
         type: choice
         options: [tutti, iphone, ipad]
         default: tutti
+      schermate:
+        description: "solo queste schermate (nomi separati da spazi, es. «lega-importa-csv scambi-una-rosa»), in tutte le varianti; vuoto = secondo «scatti»"
+        type: string
+        default: ""
   pull_request:
     types: [opened, reopened, synchronize, labeled]
 
@@ -101,6 +105,7 @@ jobs:
           SCATTI: ${{ inputs.scatti || 'veloce' }}
           IPHONE: ${{ inputs.iphone == 'piccolo' && 'iphone-piccolo' || inputs.iphone == 'grande' && 'iphone-grande' || 'iphone' }}
           DISPOSITIVI: ${{ inputs.dispositivi || 'tutti' }}
+          SCHERMATE: ${{ inputs.schermate || '' }}
         run: bash scripts/screenshot.sh build/Build/Products/Debug-iphonesimulator/Schieraxi.app screenshot
       - name: Scatta le fotografie dei widget
         if: always() && inputs.dispositivi != 'ipad'
