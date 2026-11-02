@@ -37,6 +37,7 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 - Ore tranquille (`silenzio`, `silenzio_da`, `silenzio_a` degli avvisi): `Domain/OreTranquille.swift`; i promemoria locali le rispettano (le ricorda in UserDefaults). Il nome e' sempre «SchieraXI» con XI maiuscolo. Con «Riduci movimento»: dissolvenze e onda di opacita', mai movimenti (`Tema.molla/morbida/quieta`, `.transizione`).
 - Modifiche di contratto: farle prima lato server (retrocompatibili), poi qui.
 - Offline: l'ultima risposta di ogni schermata e' in `Caches/api` (max 150 file, per server); "Server non raggiungibile. Dati salvati del ...".
+- Fasi della giornata in Oggi (`fase` = `prima` | `in_corso` | `finita`, con `in_corso`, `riepilogo`, `prossima`, `partite[].stato`): tipi tolleranti in fondo a `Domain/Modelli.swift` (li compila anche il widget), logica e testi in `Domain/FasiGiornata.swift` (test `FasiGiornataTests`), schede in `Presentation/Oggi/FasiGiornataView.swift`. Fase mancante = `prima` (comportamento di sempre). Demo: `-DEMO_SCHERMATA oggi-in-corso` / `oggi-finita` (`FinteServer.demoFase`).
 
 ## Da NON cambiare (rompe SideStore/aggiornamenti/dati dell'utente)
 - Bundle id `it.schieraxi.app` (dal 1/11/2026, prima `it.tommaso.schieraxi`; e `it.schieraxi.app.aggiorna` per il task in background, estensione widget col suo id): cambiarlo = app nuova, perso il rinnovo e l'App ID gratuito (limite 3 app, il widget ne usa uno in piu').
