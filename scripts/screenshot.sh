@@ -40,11 +40,11 @@ PER_IPAD=(oggi oggi-fondo formazione formazione-fondo formazione-manuale formazi
 # SCATTI=completo: tutte le schermate, tutte le varianti (ci vuole quasi un'ora).
 SCATTI="${SCATTI:-completo}"
 if [ "$SCATTI" = "veloce" ]; then
-  TUTTE=(oggi formazione formazione-perche giocatore lega-diario mercato-classifica impostazioni-aspetto accesso-accedi accesso-limite primo-avvio impostazioni-fondo impostazioni-crediti)
-  PER_CHIARO=(oggi formazione-perche giocatore lega-diario primo-avvio impostazioni-crediti)
+  TUTTE=(oggi formazione formazione-perche giocatore lega-diario lega-avvisi mercato-classifica impostazioni-aspetto accesso-accedi accesso-limite primo-avvio impostazioni-fondo impostazioni-crediti)
+  PER_CHIARO=(oggi formazione-perche giocatore lega-diario lega-avvisi primo-avvio impostazioni-crediti)
   PER_TESTO_GRANDE=(accesso-accedi)
   PRINCIPALI=(oggi lega)
-  PER_IPAD=(formazione formazione-perche giocatore lega-diario primo-avvio impostazioni-crediti)
+  PER_IPAD=(formazione formazione-perche giocatore lega-diario lega-avvisi primo-avvio impostazioni-crediti)
 fi
 
 # SCATTI=collaudo: OGNI schermata in scuro, chiaro e testo grandissimo (per il giro di stabilita'; un dispositivo per corsa).
@@ -252,7 +252,7 @@ osascript -e 'tell application "System Events" to key code 123 using command dow
 sleep 3
 RADDRIZZA=1   # col simulatore ruotato la foto esce girata di 90 gradi (come sull'iPhone)
 if [ "$SCATTI" = "veloce" ]; then
-  giro "$UDID_IPAD" ipad_scuro_orizzontale scuro large oggi formazione giocatore lega-diario lega
+  giro "$UDID_IPAD" ipad_scuro_orizzontale scuro large oggi formazione giocatore lega-diario lega-avvisi lega
 elif [ "$SCATTI" = "collaudo" ]; then
   giro "$UDID_IPAD" ipad_scuro_orizzontale scuro large "${TUTTE[@]}"
   giro "$UDID_IPAD" ipad_chiaro_orizzontale chiaro large "${TUTTE[@]}"
