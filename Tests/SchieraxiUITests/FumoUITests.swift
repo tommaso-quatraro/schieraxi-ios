@@ -146,8 +146,13 @@ final class FumoUITests: XCTestCase {
         app.terminate()
         app.launchArguments += ["-DEMO_SCHERMATA", "lega-importa-csv"]
         app.launch()
-        attendi("Cosa è cambiato")
+        // prima l'anteprima (niente si salva), poi «Conferma e salva»
+        attendi("Controlla prima di salvare")
         XCTAssertFalse(elemento("Usa un Excel (.xlsx), un CSV o un file di testo.").exists, "il CSV non deve essere rifiutato")
+        let conferma = app.buttons["Conferma e salva"]
+        for _ in 0..<8 where !conferma.isHittable { app.swipeUp() }
+        conferma.tap()
+        attendi("Rose salvate", contiene: true)
     }
 
     func testLaLenteApreLaRicerca() {

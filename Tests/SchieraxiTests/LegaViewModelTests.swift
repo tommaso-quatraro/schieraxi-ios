@@ -235,8 +235,11 @@ final class LegaViewModelTests: XCTestCase {
     // MARK: importazione, crediti, avvisi, movimenti, squadre
 
     func testImportazioneDaTesto() async throws {
-        let s = ServerDiProva { _, _, _ in
-            Data(#"{"squadre_importate": ["A"], "totale_squadre": 10, "avvisi": ["B: 24 giocatori"], "riepilogo": "A prende X", "differenze": {"nessuna_differenza": false, "svincolati_presi": [{"squadra": "A", "giocatori": [{"id": 1, "nome": "Prova"}]}], "testo": "A prende X"}}"#.utf8)
+        let s = ServerDiProva { _, percorso, _ in
+            if percorso.hasPrefix("/api/rose/anteprima") {
+                return Data(#"{"squadre": [{"nome": "A", "giocatori": [{"testo": "Prova", "stato": "sicuro", "id": 1, "nome": "Prova"}]}], "mia_squadra": "A"}"#.utf8)
+            }
+            return Data(#"{"squadre_importate": ["A"], "totale_squadre": 10, "avvisi": ["B: 24 giocatori"], "riepilogo": "A prende X", "differenze": {"nessuna_differenza": false, "svincolati_presi": [{"squadra": "A", "giocatori": [{"id": 1, "nome": "Prova"}]}], "testo": "A prende X"}}"#.utf8)
         }
         let vm = ImportaExcelViewModel(server: s)
         await vm.importaTesto()
@@ -244,6 +247,10 @@ final class LegaViewModelTests: XCTestCase {
         vm.testoRose = "Squadra A\nPortieri: ..."
         vm.sostituisciTutto = true
         await vm.importaTesto()
+        XCTAssertNil(vm.errore)
+        XCTAssertEqual(vm.anteprima?.squadre.map(\.nome), ["A"])
+        XCTAssertEqual(s.quante("POST /api/rose/testo"), 0, "l'anteprima non salva")
+        await vm.conferma()
         XCTAssertNil(vm.errore)
         XCTAssertEqual(vm.esito?.totaleSquadre, 10)
         XCTAssertEqual(vm.esito?.differenze?.svincolatiPresi?.first?.giocatori.first?.nome, "Prova")
@@ -259,7 +266,7 @@ final class LegaViewModelTests: XCTestCase {
         vm.testoRose = "boh"
         await vm.importaTesto()
         XCTAssertNil(vm.esito)
-        XCTAssertEqual(vm.errore, "Il server dice: Nessuna rosa trovata")
+        XCTAssertEqual(vm.errore, "Nessuna rosa trovata")
     }
 
     func testMovimenti() async throws {

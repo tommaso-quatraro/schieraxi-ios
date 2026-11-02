@@ -46,8 +46,12 @@ final class ServerDiProva: ServerClient, @unchecked Sendable {
     }
 
     func carica(_ percorso: String, nome: String, dati: Data, tipo: String) async throws -> Data {
+        try await carica(percorso, nome: nome, dati: dati, tipo: tipo, campi: [])
+    }
+
+    func carica(_ percorso: String, nome: String, dati: Data, tipo: String, campi: [CampoModulo]) async throws -> Data {
         annota("UPLOAD \(percorso)", dati)
-        annotaFile(nome: nome, tipo: tipo)
+        annotaFile(nome: nome, tipo: tipo, campi: campi)
         return try await gestore("UPLOAD", percorso, dati)
     }
 
@@ -58,10 +62,18 @@ final class ServerDiProva: ServerClient, @unchecked Sendable {
     }
 
     private var files: [(nome: String, tipo: String)] = []
+    private var moduli: [[CampoModulo]] = []
 
-    private func annotaFile(nome: String, tipo: String) {
+    /// I campi di testo mandati con ogni file (vuoto = solo il file), nell'ordine.
+    var campiCaricati: [[CampoModulo]] {
+        blocco.lock(); defer { blocco.unlock() }
+        return moduli
+    }
+
+    private func annotaFile(nome: String, tipo: String, campi: [CampoModulo]) {
         blocco.lock(); defer { blocco.unlock() }
         files.append((nome, tipo))
+        moduli.append(campi)
     }
 
     // MARK: costruzione rapida

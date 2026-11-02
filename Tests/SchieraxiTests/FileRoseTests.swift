@@ -132,10 +132,17 @@ final class ImportaFileTests: XCTestCase {
         let vm = ImportaExcelViewModel(server: s)
         await vm.importa(.success([try file("rose.csv", Data("Squadra;Ruolo;Giocatore\nA;P;Sorvani\n".utf8))]))
         XCTAssertNil(vm.errore)
+        // prima l'anteprima (non salva niente), poi «Conferma e salva» con lo stesso file
+        XCTAssertNotNil(vm.anteprima)
+        XCTAssertNil(vm.esito)
+        XCTAssertEqual(s.quante("UPLOAD /api/rose/anteprima/file?sostituisci_tutto=false"), 1)
+        XCTAssertEqual(s.quante("UPLOAD /api/rose/file"), 0, "l'anteprima non salva")
+        await vm.conferma()
+        XCTAssertNil(vm.errore)
         XCTAssertEqual(vm.esito?.riepilogo, "Fatto")
-        XCTAssertEqual(s.fileCaricati.count, 1)
-        XCTAssertEqual(s.fileCaricati.first?.nome, "rose.csv")
-        XCTAssertEqual(s.fileCaricati.first?.tipo, "text/csv")
+        XCTAssertEqual(s.fileCaricati.count, 2)
+        XCTAssertEqual(s.fileCaricati.map(\.nome), ["rose.csv", "rose.csv"])
+        XCTAssertEqual(s.fileCaricati.map(\.tipo), ["text/csv", "text/csv"])
         XCTAssertEqual(s.quante("UPLOAD /api/rose/file?sostituisci_tutto=false"), 1)
     }
 
@@ -186,7 +193,7 @@ final class ImportaFileTests: XCTestCase {
         let s = ServerDiProva { _, _, _ in throw ErroreApi.server("Formato non supportato: usa Excel (.xlsx), CSV o testo") }
         let vm = ImportaExcelViewModel(server: s)
         await vm.importa(.success([try file("rose.csv", Data("A;P;S".utf8))]))
-        XCTAssertEqual(vm.errore, "Il server dice: Formato non supportato: usa Excel (.xlsx), CSV o testo")
+        XCTAssertEqual(vm.errore, "Formato non supportato: usa Excel (.xlsx), CSV o testo")
         XCTAssertFalse(vm.inCorso)
     }
 
