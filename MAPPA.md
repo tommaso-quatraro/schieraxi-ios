@@ -55,6 +55,7 @@ Il server e la logica stanno nel repository `schieraxi` (ha la sua MAPPA.md con 
 
 ## Impostazioni e Altro (ripulite il 1/11/2026)
 - Impostazioni (`Presentation/Lega/ImpostazioniView.swift`): Il tuo account (`AccountSezione`: un solo nome, email di Google se manca quella dell'account, `Domain/ProfiloAccount.swift`), Accessi, App (Aspetto: tema e animazioni; Avvisi), Informazioni (privacy, termini, licenze, versione), Avanzate (solo chi amministra; resta solo la diagnostica del widget; la riga di stato del widget sta in App), Esci (`EsciSezione`).
+- TRAPPOLA (build 219, «Cambia password» si chiudeva da solo): mai `.sheet`, `.task`, `.confirmationDialog` su una `Section` dentro una `List`/`Form`: finiscono su OGNI riga e le righe si rifanno quando arrivano dati nuovi, chiudendo il foglio. I fogli dell'account si aprono tutti da `FogliAccount` (`fogliAccount(_:)` sul NavigationStack delle Impostazioni, `FoglioAccount` in `AccountSezione.swift`). Test: `AccessoUITests.testFogliDellAccountRestanoApertiQuandoArrivanoDatiNuovi` (`-DEMO_ACCOUNT_CHE_CAMBIA`).
 - Altro (`LegaView`, `ambito: .altro`): Scambi, Diario, Asta, Regole, Movimenti, Crediti, Nuova stagione, Novità. Ogni voce in un posto solo; niente pallino sulle schede (le novità le annuncia la riga di Oggi).
 - Tolti: «Sotto il cofano», copia di sicurezza nell'interfaccia (schermata e logica di invio tolte; il «Da fare» `backup` non si mostra), icone alternative, colore/densità/sezione iniziale (`OpzioniTolte` toglie le scelte vecchie all'avvio), maiuscole del nome, esci da tutti i telefoni.
 
