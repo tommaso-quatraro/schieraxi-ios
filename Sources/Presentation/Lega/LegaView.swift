@@ -51,6 +51,10 @@ struct LegaView: View {
             // Cambiando voce nell'elenco la colonna di destra riparte pulita.
             .id(percorso.wrappedValue.first)
         }
+        // Sull'iPad la colonna di destra non resta vuota («Scegli una voce»): si apre la prima voce utile della scheda.
+        .onAppear {
+            if percorso.wrappedValue.isEmpty { percorso.wrappedValue = [ambito == .squadra ? .squadre : .scambi] }
+        }
     }
 
     private var testoVuoto: String {
