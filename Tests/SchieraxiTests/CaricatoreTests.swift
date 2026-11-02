@@ -106,7 +106,7 @@ final class CaricatoreTests: XCTestCase {
         XCTAssertEqual(c.dato?.giornata, 9)
         await c.ricarica("/api/b")
         XCTAssertNil(c.dato, "i dati di /api/a non devono comparire sotto /api/b")
-        XCTAssertEqual(c.errore, "Il server dice: niente")
+        XCTAssertEqual(c.errore, "niente")
         XCTAssertEqual(c.percorso, "/api/b")
     }
 

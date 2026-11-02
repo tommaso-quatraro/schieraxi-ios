@@ -93,7 +93,7 @@ final class ServerHTTPTests: XCTestCase {
             _ = try await server.grezzo("/api/formazione")
             XCTFail("doveva lanciare un errore")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "Il server dice: Nessuna rosa importata")
+            XCTAssertEqual(error.localizedDescription, "Nessuna rosa importata")
         }
     }
 
@@ -103,14 +103,14 @@ final class ServerHTTPTests: XCTestCase {
             _ = try await server.grezzo("/api/x")
             XCTFail("doveva lanciare un errore")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "Il server dice: campo mancante")
+            XCTAssertEqual(error.localizedDescription, "campo mancante")
         }
         ProtocolloFinto.gestore = { [unowned self] r in (risposta(r, 500), Data("<html>boom</html>".utf8)) }
         do {
             _ = try await server.grezzo("/api/x")
             XCTFail("doveva lanciare un errore")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "Il server ha un problema (codice 500). Riprova tra poco.", "una pagina HTML non è un messaggio del server")
+            XCTAssertEqual(error.localizedDescription, "SchieraXI ha un problema in questo momento. Riprova tra poco.", "una pagina HTML non è un messaggio del server")
         }
     }
 

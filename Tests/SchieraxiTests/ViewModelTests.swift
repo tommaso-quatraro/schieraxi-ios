@@ -33,7 +33,7 @@ final class OggiViewModelTests: XCTestCase {
         let vm = vm(.chePrecipita())
         await vm.carica()
         XCTAssertNil(vm.oggi)
-        XCTAssertEqual(vm.errore, "Non riesco a raggiungere il server. Controlla la connessione e che il server sia acceso.")
+        XCTAssertEqual(vm.errore, "Non riesco a collegarmi a SchieraXI. Controlla la connessione e riprova.")
     }
 
     func testIlComandoAggiornaRicaricaOggi() async throws {
@@ -337,7 +337,7 @@ final class ScambiViewModelTests: XCTestCase {
         vm.testoOfferta = "Ti do X e tu mi dai Y"
         await vm.valutaOfferta()
         XCTAssertNil(vm.esitoOfferta)
-        XCTAssertEqual(vm.erroreOfferta, "Il server dice: Indica prima la tua squadra nella sezione Lega")
+        XCTAssertEqual(vm.erroreOfferta, "Indica prima la tua squadra nella sezione Lega")
     }
 
     func testBozzaCopiataNegliAppunti() throws {

@@ -170,7 +170,7 @@ final class AccessoUITests: XCTestCase {
 
     func testRetAssenteDiceCosaFare() {
         avvia("rete")
-        attendi("Non riesco a raggiungere il server", contiene: true)
+        attendi("Non riesco a collegarmi a SchieraXI", contiene: true)
         XCTAssertTrue(app.buttons["Entra"].waitForExistence(timeout: 10), "si può riprovare")
         XCTAssertFalse(app.tabBars.firstMatch.exists)
     }

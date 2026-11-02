@@ -186,7 +186,7 @@ final class ImportaFileTests: XCTestCase {
         let s = ServerDiProva { _, _, _ in throw ErroreApi.server("Formato non supportato: usa Excel (.xlsx), CSV o testo") }
         let vm = ImportaExcelViewModel(server: s)
         await vm.importa(.success([try file("rose.csv", Data("A;P;S".utf8))]))
-        XCTAssertEqual(vm.errore, "Il server dice: Formato non supportato: usa Excel (.xlsx), CSV o testo")
+        XCTAssertEqual(vm.errore, "Formato non supportato: usa Excel (.xlsx), CSV o testo")
         XCTAssertFalse(vm.inCorso)
     }
 
