@@ -74,6 +74,8 @@ jobs:
           # SideStore non sa che servono e non registra il gruppo. ldid li incorpora (SideStore poi firma da capo).
           brew install ldid > /dev/null 2>&1 || echo "ldid non installato: niente App Group nell'IPA"
           if command -v ldid > /dev/null; then
+            # Keychain condiviso con il widget (ripiego senza App Group): SideStore (AltSign) cambia il prefisso con la squadra vera.
+            sed -i '' 's/\$(AppIdentifierPrefix)/ABCDE12345./' Config/Schieraxi.entitlements Config/SchieraxiWidget.entitlements
             ldid -SConfig/SchieraxiWidget.entitlements Payload/Schieraxi.app/PlugIns/SchieraxiWidget.appex/SchieraxiWidget || echo "ldid: widget non riuscito"
             ldid -SConfig/Schieraxi.entitlements Payload/Schieraxi.app/Schieraxi || echo "ldid: app non riuscito"
             ldid -e Payload/Schieraxi.app/Schieraxi | grep -A2 application-groups || echo "ATTENZIONE: permessi non trovati nell'app"

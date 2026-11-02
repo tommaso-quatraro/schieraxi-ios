@@ -10,12 +10,92 @@ final class CondivisoTests: XCTestCase {
         cartella = FileManager.default.temporaryDirectory.appendingPathComponent("condiviso-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: cartella, withIntermediateDirectories: true)
         Condiviso.cartellaDiProva = cartella
+        PortachiaviCondiviso.archivio = MemoriaCollegamento()
     }
 
     override func tearDown() {
         Condiviso.cartellaDiProva = nil
+        PortachiaviCondiviso.archivio = KeychainCollegamento()
         try? FileManager.default.removeItem(at: cartella)
         super.tearDown()
+    }
+
+    /// Un profilo come quello che SideStore mette nel pacchetto: un plist dentro una busta firmata (qui byte a caso intorno).
+    private func profiloGrezzo(squadra: String = "ABCDE12345", gruppi: [String] = ["group.it.schieraxi.app.ABCDE12345"]) throws -> Data {
+        let plist: [String: Any] = [
+            "TeamIdentifier": [squadra],
+            "Entitlements": [
+                "application-identifier": squadra + ".it.schieraxi.app." + squadra,
+                "com.apple.developer.team-identifier": squadra,
+                "com.apple.security.application-groups": gruppi,
+                "keychain-access-groups": [squadra + ".*"],
+            ],
+        ]
+        let xml = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        return Data([0x30, 0x82, 0x0F, 0x00, 0x06, 0x09]) + xml + Data([0xA0, 0x82, 0x00, 0x01, 0xFF])
+    }
+
+    func testIlProfiloDellaFirmaSiLegge() throws {
+        let p = try XCTUnwrap(ProfiloFirma.leggi(try profiloGrezzo()))
+        XCTAssertEqual(p.squadra, "ABCDE12345")
+        XCTAssertEqual(p.gruppi, ["group.it.schieraxi.app.ABCDE12345"])
+        XCTAssertEqual(p.gruppiPortachiavi, ["ABCDE12345.*"])
+        XCTAssertEqual(p.identificativoApp, "ABCDE12345.it.schieraxi.app.ABCDE12345")
+        XCTAssertNil(ProfiloFirma.leggi(Data("niente di utile".utf8)))
+        XCTAssertNil(ProfiloFirma.leggi(Data()))
+        // una squadra strana non si usa per costruire nomi
+        XCTAssertNil(try XCTUnwrap(ProfiloFirma.leggi(try profiloGrezzo(squadra: "../../x"))).squadra)
+    }
+
+    func testLaSquadraDalBundleId() {
+        XCTAssertEqual(ProfiloFirma.squadraDalBundle("it.schieraxi.app.ABCDE12345"), "ABCDE12345")
+        XCTAssertEqual(ProfiloFirma.squadraDalBundle("it.schieraxi.app.ABCDE12345.widget"), "ABCDE12345")
+        XCTAssertNil(ProfiloFirma.squadraDalBundle("it.schieraxi.app.widget"))
+        XCTAssertNil(ProfiloFirma.squadraDalBundle("it.schieraxi.app"))
+        XCTAssertNil(ProfiloFirma.squadraDalBundle(nil))
+    }
+
+    func testSenzaALTAppGroupsIlGruppoVieneDalProfilo() throws {
+        // SideStore da settembre 2026 non scrive più ALTAppGroups: il nome vero si legge dal profilo, poi si ricostruisce con la squadra
+        let p = try XCTUnwrap(ProfiloFirma.leggi(try profiloGrezzo(gruppi: ["group.it.schieraxi.app.ABCDE12345", "group.altro.invalid"])))
+        XCTAssertEqual(Condiviso.identificativi(info: [:], profilo: p, bundle: "it.schieraxi.app.ABCDE12345.widget"),
+                       ["group.it.schieraxi.app.ABCDE12345", "group.it.schieraxi.app"])
+        // senza profilo basta il bundle id con la squadra
+        XCTAssertEqual(Condiviso.identificativi(info: nil, profilo: nil, bundle: "it.schieraxi.app.ZZZZZ99999"),
+                       ["group.it.schieraxi.app.ZZZZZ99999", "group.it.schieraxi.app"])
+        // un gruppo che comincia solo per il nome base non è nostro
+        XCTAssertEqual(Condiviso.identificativi(info: ["ALTAppGroups": ["group.it.schieraxi.appaltro"]], profilo: nil, bundle: nil),
+                       ["group.it.schieraxi.app"])
+    }
+
+    func testIGruppiDelKeychainCondiviso() throws {
+        let p = try XCTUnwrap(ProfiloFirma.leggi(try profiloGrezzo()))
+        XCTAssertEqual(PortachiaviCondiviso.gruppiCandidati(profilo: p, bundle: "it.schieraxi.app.ABCDE12345"),
+                       ["ABCDE12345.it.schieraxi.app.condiviso", "group.it.schieraxi.app.ABCDE12345"])
+        XCTAssertEqual(PortachiaviCondiviso.gruppiCandidati(profilo: nil, bundle: "it.schieraxi.app"), [], "senza squadra non si scrive niente")
+    }
+
+    func testIlKeychainCondivisoPassaIndirizzoETokenDelWidget() {
+        let archivio = MemoriaCollegamento(ammessi: ["ABCDE12345.it.schieraxi.app.condiviso"])
+        PortachiaviCondiviso.archivio = archivio
+        XCTAssertTrue(PortachiaviCondiviso.salva(indirizzo: "https://uno.invalid", token: "fw_tokenDiProva123456",
+                                                 gruppi: ["group.non.concesso", "ABCDE12345.it.schieraxi.app.condiviso"]))
+        XCTAssertEqual(PortachiaviCondiviso.leggi(), CodiceWidget.Contenuto(i: "https://uno.invalid", t: "fw_tokenDiProva123456"))
+        // nessun gruppo concesso: niente collegamento automatico (e niente copia nel gruppo privato)
+        XCTAssertFalse(PortachiaviCondiviso.salva(indirizzo: "https://uno.invalid", token: "fw_altroToken12345678", gruppi: ["group.non.concesso"]))
+        XCTAssertNil(PortachiaviCondiviso.leggi())
+        PortachiaviCondiviso.salva(indirizzo: "https://uno.invalid", token: nil, gruppi: ["ABCDE12345.it.schieraxi.app.condiviso"])
+        XCTAssertEqual(PortachiaviCondiviso.leggi()?.i, "https://uno.invalid")
+        XCTAssertNil(PortachiaviCondiviso.leggi()?.t, "server senza account: solo l'indirizzo")
+        Condiviso.dimentica()
+        XCTAssertNil(PortachiaviCondiviso.leggi(), "uscendo dall'account il widget perde anche il Keychain condiviso")
+    }
+
+    func testCollegamentoAutomatico() {
+        XCTAssertTrue(CollegamentoWidget.automatico(canale: true, conAccount: true, haToken: true))
+        XCTAssertTrue(CollegamentoWidget.automatico(canale: true, conAccount: false, haToken: false), "server senza account: basta l'indirizzo")
+        XCTAssertFalse(CollegamentoWidget.automatico(canale: true, conAccount: true, haToken: false))
+        XCTAssertFalse(CollegamentoWidget.automatico(canale: false, conAccount: true, haToken: true))
     }
 
     func testIdentificativiDaSideStore() {
@@ -124,15 +204,32 @@ final class CodiceWidgetTests: XCTestCase {
         return s.hasPrefix("https://") && s.count > 8 ? s : nil
     }
 
-    private func dove(_ condiviso: DatiCondivisi = DatiCondivisi(), codice: String = "", scritto: String = "") -> (indirizzo: String, token: String?)? {
-        CodiceWidget.destinazione(condiviso: condiviso, codice: codice, scritto: scritto, pulisci: pulisci)
+    private func dove(_ condiviso: DatiCondivisi = DatiCondivisi(), portachiavi: CodiceWidget.Contenuto? = nil, codice: String = "",
+                      predefinito: String = "https://pubblico.invalid") -> (indirizzo: String, token: String?)? {
+        CodiceWidget.destinazione(condiviso: condiviso, portachiavi: portachiavi, codice: codice, predefinito: predefinito, pulisci: pulisci)
     }
 
     func testSenzaAppGroupVinceIlCodiceIncollato() {
         let codice = CodiceWidget.crea(indirizzo: "https://uno.invalid", token: "fw_codiceIncollato123")
-        let d = dove(codice: codice, scritto: "https://scritto.invalid")
+        let d = dove(codice: codice)
         XCTAssertEqual(d?.indirizzo, "https://uno.invalid")
         XCTAssertEqual(d?.token, "fw_codiceIncollato123")
+    }
+
+    func testIlKeychainCondivisoVinceSulCodiceMaNonSulGruppo() {
+        let chiave = CodiceWidget.Contenuto(i: "https://chiave.invalid", t: "fw_dalKeychain1234567")
+        let codice = CodiceWidget.crea(indirizzo: "https://uno.invalid", token: "fw_codiceIncollato123")
+        XCTAssertEqual(dove(portachiavi: chiave, codice: codice)?.token, "fw_dalKeychain1234567", "automatico prima del manuale")
+        let gruppo = DatiCondivisi(indirizzo: "https://app.invalid", token: "fw_dalGruppo12345678", tokenPerIndirizzo: "https://app.invalid")
+        XCTAssertEqual(dove(gruppo, portachiavi: chiave)?.token, "fw_dalGruppo12345678")
+        // Keychain senza token: vale il codice incollato; senza codice l'indirizzo del Keychain
+        let soloIndirizzo = CodiceWidget.Contenuto(i: "https://chiave.invalid", t: nil)
+        XCTAssertEqual(dove(portachiavi: soloIndirizzo, codice: codice)?.token, "fw_codiceIncollato123")
+        XCTAssertEqual(dove(portachiavi: soloIndirizzo)?.indirizzo, "https://chiave.invalid")
+        XCTAssertNil(dove(portachiavi: soloIndirizzo)?.token)
+        // un indirizzo non ammesso nel Keychain non si usa
+        XCTAssertEqual(dove(portachiavi: CodiceWidget.Contenuto(i: "http://chiaro.invalid", t: "fw_dalKeychain1234567"))?.indirizzo,
+                       "https://pubblico.invalid")
     }
 
     func testAppGroupConTokenVinceSulCodice() {
@@ -159,11 +256,13 @@ final class CodiceWidgetTests: XCTestCase {
         XCTAssertNil(dove(gruppo)?.token)
     }
 
-    func testSoloIndirizzoScrittoOppureNiente() {
-        XCTAssertEqual(dove(scritto: "https://scritto.invalid/")?.indirizzo, "https://scritto.invalid")
-        XCTAssertNil(dove(scritto: "http://scritto.invalid")?.indirizzo, "solo https")
-        XCTAssertNil(dove(codice: "schieraxi1.!!!"))
-        XCTAssertNil(dove())
+    func testSenzaNienteValeIlServerPubblico() {
+        // il widget non chiede più l'indirizzo: senza dati dell'app né codice usa il server pubblico (senza token)
+        XCTAssertEqual(dove()?.indirizzo, "https://pubblico.invalid")
+        XCTAssertNil(dove()?.token)
+        XCTAssertEqual(dove(codice: "schieraxi1.!!!")?.indirizzo, "https://pubblico.invalid", "un codice rovinato si ignora")
+        XCTAssertNil(dove(predefinito: "http://chiaro.invalid"), "solo https")
+        XCTAssertEqual(ServerPubblico.indirizzo, Config.indirizzoPredefinito)
     }
 
     // MARK: «Tocca per collegare»
@@ -263,10 +362,12 @@ final class TokenWidgetTests: XCTestCase {
         nomeSuite = "prova-tw-\(UUID().uuidString)"
         memoria = UserDefaults(suiteName: nomeSuite)
         TokenWidget.archivio = MemoriaToken()
+        PortachiaviCondiviso.archivio = MemoriaCollegamento()
     }
 
     override func tearDown() {
         Condiviso.cartellaDiProva = nil
+        PortachiaviCondiviso.archivio = KeychainCollegamento()
         try? FileManager.default.removeItem(at: cartella)
         memoria.removePersistentDomain(forName: nomeSuite)
         TokenWidget.archivio = KeychainToken(servizio: TokenWidget.servizio)
