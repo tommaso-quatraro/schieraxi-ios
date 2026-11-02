@@ -77,21 +77,21 @@ final class DominioTests: XCTestCase {
     }
 
     func testTestoDellaFormazione() throws {
-        let p = try giocatore(1, "Viscardi", ruolo: "P")
-        let d1 = try giocatore(2, "Rrufani")
-        let d2 = try giocatore(3, "Kaleo")
-        let c = try giocatore(4, "Polimeni", ruolo: "C")
-        let a = try giocatore(5, "Bolly", ruolo: "A")
-        let panchina = [try giocatore(6, "Bilsen", ruolo: "P"), try giocatore(7, "Nesti", ruolo: "P")]
+        let p = try giocatore(1, "Noraldi", ruolo: "P")
+        let d1 = try giocatore(2, "Foselli")
+        let d2 = try giocatore(3, "Barucci")
+        let c = try giocatore(4, "Delardi", ruolo: "C")
+        let a = try giocatore(5, "Castotti", ruolo: "A")
+        let panchina = [try giocatore(6, "Pelucci", ruolo: "P"), try giocatore(7, "Fosaldi", ruolo: "P")]
         let testo = TestoFormazione.crea(giornata: 9, modulo: "2-1-1", titolari: [a, c, d1, p, d2], panchina: panchina)
-        XCTAssertEqual(testo, "Giornata 9 · 2-1-1\nP: Viscardi\nD: Rrufani, Kaleo\nC: Polimeni\nA: Bolly\nPanchina: 1) Bilsen, 2) Nesti")
+        XCTAssertEqual(testo, "Giornata 9 · 2-1-1\nP: Noraldi\nD: Foselli, Barucci\nC: Delardi\nA: Castotti\nPanchina: 1) Pelucci, 2) Fosaldi")
         XCTAssertFalse(TestoFormazione.crea(giornata: 1, modulo: "x", titolari: [], panchina: []).contains("Panchina"))
     }
 
     func testNomeCorto() throws {
-        XCTAssertEqual(try giocatore(1, "Marzetti L.").nomeCorto, "Marzetti")
-        XCTAssertEqual(try giocatore(1, "De Brandt").nomeCorto, "De Brandt")
-        XCTAssertEqual(try giocatore(1, "Corsi S.").nomeCorto, "Corsi")
+        XCTAssertEqual(try giocatore(1, "Dalanti S.").nomeCorto, "Dalanti")
+        XCTAssertEqual(try giocatore(1, "Monelli Feraldi").nomeCorto, "Monelli Feraldi")
+        XCTAssertEqual(try giocatore(1, "Lanotti E.").nomeCorto, "Lanotti")
         XCTAssertEqual(try giocatore(1, "Pelayo").nomeCorto, "Pelayo")
     }
 
@@ -99,7 +99,7 @@ final class DominioTests: XCTestCase {
 
     func testConfrontoSchieratoEVincitore() throws {
         var c: Confronto = try Fixture.decodifica("confronto")
-        XCTAssertEqual(c.vincitore?.nome, "Rrufani")
+        XCTAssertEqual(c.vincitore?.nome, "Foselli")
         XCTAssertNil(c.schierato, "tutti e due titolari: non c'è chi schierare")
         XCTAssertTrue(c.fattoriVisibili.contains { $0.chiave == "giocare" })
         XCTAssertGreaterThanOrEqual(c.massimoEffetto, 0.3)
@@ -109,7 +109,7 @@ final class DominioTests: XCTestCase {
         // uno titolare e l'altro in panchina: si schiera il titolare
         let json = String(decoding: try Fixture.dati("confronto"), as: UTF8.self).replacingOccurrences(of: "\"posto_b\":\"titolare\"", with: "\"posto_b\":\"panchina\"")
         c = try Decodifica.decodifica(Data(json.utf8))
-        XCTAssertEqual(c.schierato?.nome, "Rrufani")
+        XCTAssertEqual(c.schierato?.nome, "Foselli")
     }
 
     @MainActor
@@ -123,7 +123,7 @@ final class DominioTests: XCTestCase {
 
     private func proposta(mio: Double, loro: Double) throws -> PropostaScambio {
         let json = """
-        {"mia": "Io", "altra": "Loro", "do": [{"id": 1, "nome": "Kaleo", "ruolo": "D", "squadra": "COM"}, {"id": 2, "nome": "Rowan", "ruolo": "C", "squadra": "BOL"}],
+        {"mia": "Io", "altra": "Loro", "do": [{"id": 1, "nome": "Barucci", "ruolo": "D", "squadra": "COM"}, {"id": 2, "nome": "Rugini", "ruolo": "C", "squadra": "BOL"}],
          "ricevo": [{"id": 3, "nome": "Mangoni", "ruolo": "D", "squadra": "MON"}], "guadagno_mio": \(mio), "guadagno_loro": \(loro)}
         """
         return try Decodifica.decodifica(Data(json.utf8))
@@ -131,7 +131,7 @@ final class DominioTests: XCTestCase {
 
     func testBozzaDelMessaggio() throws {
         let diversa = ScambiLogica.bozza(try proposta(mio: 3, loro: 0.6))
-        XCTAssertEqual(diversa, "Ciao! Ti propongo uno scambio: io ti do Kaleo e Rowan, tu mi dai Mangoni. Secondo i miei calcoli conviene a tutti e due (tu +0,6 punti attesi in stagione, io +3,0). Che ne dici?")
+        XCTAssertEqual(diversa, "Ciao! Ti propongo uno scambio: io ti do Barucci e Rugini, tu mi dai Mangoni. Secondo i miei calcoli conviene a tutti e due (tu +0,6 punti attesi in stagione, io +3,0). Che ne dici?")
         let pari = ScambiLogica.bozza(try proposta(mio: 1.2, loro: 0.9))
         XCTAssertTrue(pari.contains("più o meno uguale"), pari)
     }
@@ -168,7 +168,7 @@ final class DominioTests: XCTestCase {
         ArchivioScambi.registra(uno, quando: Date(timeIntervalSince1970: 2_000_000), memoria)
         var elenco = ArchivioScambi.leggi(memoria)
         XCTAssertEqual(elenco.count, 1)
-        XCTAssertEqual(elenco[0].dai, ["Kaleo", "Rowan"])
+        XCTAssertEqual(elenco[0].dai, ["Barucci", "Rugini"])
         XCTAssertEqual(elenco[0].ricevo, ["Mangoni"])
         XCTAssertEqual(elenco[0].quando.timeIntervalSince1970, 2_000_000, accuracy: 1)
         // si tengono gli ultimi 20
