@@ -158,9 +158,10 @@ final class PrecisioneTests: XCTestCase {
     }
 
     func testDemoHaEntrambeLeFunzioni() throws {
-        let d = try diario(DatiDemo.diario())
+        let risposte = FinteServer.demo.risposte
+        let d = try diario(try XCTUnwrap(risposte["/api/diario"]))
         XCTAssertNotNil(TestoPrecisione(d.precisione))
-        let s = try JSONDecoder().decode(StatoAvvisi.self, from: Data(DatiDemo.avvisi().utf8))
+        let s = try JSONDecoder().decode(StatoAvvisi.self, from: Data(try XCTUnwrap(risposte["/api/avvisi"]).utf8))
         XCTAssertEqual(s.impostazioni.avviso_prima, 60)
     }
 }
